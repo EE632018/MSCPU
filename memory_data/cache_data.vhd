@@ -2,7 +2,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 
-entity cache_memory is
+entity cache_data is
     generic(
         loc_bits        : integer := 4; -- 16 entries
         offset_bits     : integer := 2; -- to choose one of four words
@@ -18,16 +18,16 @@ entity cache_memory is
         clk             : in std_logic; -- same as processor
         refill          : in std_logic; -- miss, refill cache using data from memory
         update          : in std_logic; -- hit, update, cache using date from processor
-        index           : in std_logic_vector(loc_bits-1 downto 0); -- index selection
+        data_loc        : in std_logic_vector(loc_bits-1 downto 0); -- data_loc selection
         offset          : in std_logic_vector(offset_bits-1 downto 0); -- offset selection
         data_from_mem   : in std_logic_vector(block_size-1 downto 0);  -- data from memory
         data_from_proc  : in std_logic_vector(proc_word_size-1 downto 0); -- data from processor
         data_to_mem     : out std_logic_vector(block_size-1 downto 0); -- evicted block data in case of a write miss
         data_to_proc    : out std_logic_vector(proc_word_size-1 downto 0) -- data to processor
     );
-end cache_memory;
+end cache_data;
 
-architecture Behavioral of cache_memory is 
+architecture Behavioral of cache_data is 
 
 type ram is array (0 to 2**(loc_bits+offset_bits) - 1) of std_logic_vector(mem_word_size-1 downto 0);
 
@@ -41,11 +41,11 @@ signal pos4 : std_logic_vector(loc_bits+offset_bits-1 downto 0); -- postion 4
 
 begin
 
-    pos0 <= index & offset;
-    pos1 <= index & "00";
-    pos2 <= index & "01";
-    pos3 <= index & "10";
-    pos4 <= index & "11";
+    pos0 <= data_loc & offset;
+    pos1 <= data_loc & "00";
+    pos2 <= data_loc & "01";
+    pos3 <= data_loc & "10";
+    pos4 <= data_loc & "11";
 
     writing_process:process(clk)
                     begin
