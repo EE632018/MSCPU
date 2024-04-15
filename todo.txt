@@ -1,0 +1,9 @@
+
+
+todo list 
+1. Povezati cache i cache controller u jednu komponenntu
+2. Povezati sa procesorom i u procesoru dodati signale ( stall i rd)
+3. napraviti arbitera koji ce da radi kontrolu 
+4. povezati sa glavnom memorijom 
+
+

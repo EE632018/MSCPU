@@ -106,7 +106,6 @@ architecture Behavioral of core is
     signal we_s : std_logic_vector(3 downto 0);
 begin
 
-
     inst_rv: TOP_RISCV
     port map(
             -- Globalna sinhronizacija
@@ -119,7 +118,7 @@ begin
             data_mem_address_o  => data_addr_s,
             data_mem_read_i     => rdata_s,
             data_mem_write_o    => wdata_s,
-            data_mem_we_o       => we_s,
+            data_mem_we_o       => we_s
         );
     
     inst_L1_data: top_data_cache

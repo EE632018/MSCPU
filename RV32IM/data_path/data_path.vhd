@@ -20,19 +20,13 @@ entity data_path is
       -- kontrolni signali
       mem_to_reg_i        : in  std_logic_vector(1 downto 0);
       alu_op_i            : in  std_logic_vector (4 downto 0);
-      alu_op_f_i          : in  std_logic_vector (4 downto 0);
-      alu_mux_i           : in  std_logic;
       alu_src_b_i         : in  std_logic;
       pc_next_sel_i       : in  std_logic;
       rd_we_i             : in  std_logic;
-      rd_we_f_i           : in  std_logic;
-      rd_csr_we_i         : in  std_logic;
-      csr_int_mux_i       : in  std_logic;
       branch_condition_o  : out std_logic;
       -- kontrolni signali za prosledjivanje operanada u ranije faze protocne obrade
       alu_forward_a_i     : in  std_logic_vector (1 downto 0);
       alu_forward_b_i     : in  std_logic_vector (1 downto 0);
-      alu_forward_c_i     : in  std_logic_vector (1 downto 0);
       branch_forward_a_i  : in  std_logic;
       branch_forward_b_i  : in  std_logic;
       -- kontrolni signal za resetovanje if/id registra
@@ -44,9 +38,8 @@ entity data_path is
       load_mux_i          : in  std_logic;
       funct3_mem_i        : in  std_logic_vector(2 downto 0);
       funct3_ex_i         : in  std_logic_vector(2 downto 0);
-      stall_o             : out std_logic;
-      csr_op_i            : in std_logic_vector(2 downto 0);
-      imm_clr_i           : in std_logic
+      stall_i             : in std_logic;
+      stall_o             : out std_logic
       );
 
 end entity;
@@ -75,12 +68,7 @@ architecture Behavioral of data_path is
    signal pc_adder_id_s           : std_logic_vector (31 downto 0) := (others=>'0');
    signal pc_reg_id_s             : std_logic_vector (31 downto 0) := (others=>'0');
    signal rs1_data_id_s           : std_logic_vector (31 downto 0) := (others=>'0');
-   signal rs1_data_mux_id_s       : std_logic_vector (31 downto 0) := (others=>'0');  
-   signal rs1_csr_data_id_s       : std_logic_vector (31 downto 0) := (others=>'0');
    signal rs2_data_id_s           : std_logic_vector (31 downto 0) := (others=>'0');
-   signal rs1_data_f_id_s         : std_logic_vector (31 downto 0) := (others=>'0');
-   signal rs2_data_f_id_s         : std_logic_vector (31 downto 0) := (others=>'0');
-   signal rs3_data_f_id_s         : std_logic_vector (31 downto 0) := (others=>'0');
    signal immediate_extended_id_s : std_logic_vector (31 downto 0) := (others=>'0');
    signal immediate_extended_id_s2 : std_logic_vector (31 downto 0) := (others=>'0');
    signal branch_condition_b_ex_s : std_logic_vector (31 downto 0) := (others=>'0');
@@ -88,10 +76,7 @@ architecture Behavioral of data_path is
    
    signal rs1_address_id_s        : std_logic_vector (4 downto 0) := (others=>'0');
    signal rs2_address_id_s        : std_logic_vector (4 downto 0) := (others=>'0');
-   signal rs3_address_id_s        : std_logic_vector (4 downto 0) := (others=>'0');
    signal rd_address_id_s         : std_logic_vector (4 downto 0) := (others=>'0');
-   signal rd_data_csr_id_s        : std_logic_vector (31 downto 0) := (others=>'0');
-   signal csr_address_id_s        : std_logic_vector (11 downto 0) := (others => '0');
    signal if_id_reg_flush_s       : std_logic := '0';
    signal funct3_id_s	           : std_logic_vector(2 downto 0) := (others=>'0');
    signal rd_mux_s                : std_logic_vector(1 downto 0) := (others=>'0');
@@ -110,30 +95,16 @@ architecture Behavioral of data_path is
    signal instruction_ex_s        : std_logic_vector (31 downto 0) := (others=>'0');
    signal pc_adder_ex_s           : std_logic_vector (31 downto 0) := (others=>'0');
    signal immediate_extended_ex_s : std_logic_vector (31 downto 0) := (others=>'0');
-   signal immediate_extended_ex_s2 : std_logic_vector (31 downto 0) := (others=>'0');
    signal alu_forward_a_ex_s      : std_logic_vector(31 downto 0) := (others=>'0');
    signal alu_forward_b_ex_s      : std_logic_vector(31 downto 0) := (others=>'0');
-   signal alu_forward_a_f_ex_s      : std_logic_vector(31 downto 0) := (others=>'0');
-   signal alu_forward_b_f_ex_s      : std_logic_vector(31 downto 0) := (others=>'0');
-   signal alu_forward_c_f_ex_s      : std_logic_vector(31 downto 0) := (others=>'0');
    signal alu_zero_ex_s           : std_logic := '0';
    signal alu_of_ex_s             : std_logic := '0';
    signal b_ex_s, a_ex_s          : std_logic_vector(31 downto 0) := (others=>'0');
-   signal b_ex_f_s, a_ex_f_s      : std_logic_vector(31 downto 0) := (others=>'0');
-   signal c_ex_f_s                : std_logic_vector(31 downto 0) := (others=>'0'); 
    signal alu_result_ex_s         : std_logic_vector(31 downto 0) := (others=>'0');
-   signal alu_result_f_ex_s       : std_logic_vector(31 downto 0) := (others=>'0');
-   signal alu_result_mux_ex_s     : std_logic_vector(31 downto 0) := (others=>'0');
    signal rs1_data_ex_s           : std_logic_vector (31 downto 0) := (others=>'0');
    signal rs2_data_ex_s           : std_logic_vector (31 downto 0) := (others=>'0');
-   signal rs1_data_f_ex_s         : std_logic_vector (31 downto 0) := (others=>'0');
-   signal rs2_data_f_ex_s         : std_logic_vector (31 downto 0) := (others=>'0');
-   signal rs3_data_f_ex_s         : std_logic_vector (31 downto 0) := (others=>'0'); 
-   signal rd_data_csr_ex_s        : std_logic_vector (31 downto 0) := (others=>'0');
    signal rd_address_ex_s         : std_logic_vector (4 downto 0) := (others=>'0');
-   signal csr_address_ex_s        : std_logic_vector (11 downto 0) := (others => '0');
    signal stall_s                 : std_logic;
-   signal stall_f_s               : std_logic;
    signal pc_reg_ex_s             : std_logic_vector (31 downto 0) := (others=>'0');
    signal branch_adder_ex_s       : std_logic_vector (31 downto 0) := (others=>'0');
 
@@ -152,22 +123,18 @@ architecture Behavioral of data_path is
    signal pc_adder_mem_s          : std_logic_vector (31 downto 0) := (others=>'0');
    signal alu_result_mem_s        : std_logic_vector(31 downto 0) := (others=>'0');
    signal rd_address_mem_s        : std_logic_vector (4 downto 0) := (others=>'0');
-   signal rd_data_csr_mem_s       : std_logic_vector (31 downto 0) := (others=>'0');
-   signal csr_address_mem_s       : std_logic_vector (11 downto 0) := (others => '0');
    signal rs2_data_mem_s          : std_logic_vector (31 downto 0) := (others=>'0');
    signal data_mem_read_mem_s     : std_logic_vector (31 downto 0) := (others=>'0');
-   signal funct3_mem_s		      : std_logic_vector (2 downto 0) := (others => '0');
+   signal funct3_mem_s		   : std_logic_vector (2 downto 0) := (others => '0');
    signal data_mem_read_mem_s2    : std_logic_vector (31 downto 0) := (others => '0');
-   signal alu_forward_b_mem_s     : std_logic_vector(31 downto 0) := (others=>'0'); -- sa registra ex ulaz u memoriju kada radimo store operaciju. 
+   signal alu_forward_b_mem_s      : std_logic_vector(31 downto 0) := (others=>'0'); -- sa registra ex ulaz u memoriju kada radimo store operaciju. 
    
 
    --*********      WRITEBACK      **************
    signal pc_adder_wb_s           : std_logic_vector (31 downto 0) := (others=>'0');
    signal alu_result_wb_s         : std_logic_vector(31 downto 0) := (others=>'0');
    signal rd_data_wb_s            : std_logic_vector (31 downto 0) := (others=>'0');
-   signal rd_data_csr_wb_s        : std_logic_vector (31 downto 0) := (others=>'0');  
    signal rd_address_wb_s         : std_logic_vector (4 downto 0) := (others=>'0');
-   signal csr_address_wb_s        : std_logic_vector (11 downto 0) := (others => '0');
    signal data_mem_read_wb_s      : std_logic_vector (31 downto 0) := (others=>'0');
 
    
@@ -199,55 +166,7 @@ architecture Behavioral of data_path is
             pht_addr_4bit_PAp           : out STD_LOGIC_VECTOR(WIDTH_PHT-1 DOWNTO 0)
             );
   END COMPONENT;  
-
-  component csr
-    generic(WIDTH:      positive := 32;
-            WIDTH_ADDR: positive := 12);
-    port   (clk            : in std_logic;
-            reset          : in std_logic;
-
-            rs1_address_i  : in std_logic_vector(WIDTH_ADDR - 1 downto 0);
-            rs1_data_o     : out std_logic_vector(WIDTH - 1 downto 0);
-
-            rd_we_i        : in std_logic;
-            rd_address_i   : in std_logic_vector(WIDTH_ADDR - 1 downto 0);
-            rd_data_i      : in std_logic_vector(WIDTH - 1 downto 0));
-  end component;
-  
-  component register_bank_float
-  generic (WIDTH: positive:= 32);
-  port (clk            : in std_logic;
-        reset          : in std_logic;
-        
-        rs1_address_i  : in std_logic_vector(4 downto 0);
-        rs2_address_i  : in std_logic_vector(4 downto 0);
-        rs3_address_i  : in std_logic_vector(4 downto 0);
-        
-        rs1_data_o     : out std_logic_vector(WIDTH - 1 downto 0);
-        rs2_data_o     : out std_logic_vector(WIDTH - 1 downto 0);
-        rs3_data_o     : out std_logic_vector(WIDTH - 1 downto 0);
-        
-        rd_we_i        : in std_logic;
-        rd_address_i   : in std_logic_vector(4 downto 0);
-        rd_data_i      : in std_logic_vector(WIDTH - 1 downto 0)
-    );
-  end component;
-
-  component ALU_float
-  GENERIC(
-      WIDTH : NATURAL := 32);
-   PORT(
-      clk    : in std_logic;
-      reset  : in std_logic;
-      a_ii   : in STD_LOGIC_VECTOR(WIDTH-1 DOWNTO 0);  
-      a_i    : in STD_LOGIC_VECTOR(WIDTH-1 DOWNTO 0); --prvi operand
-      b_i    : in STD_LOGIC_VECTOR(WIDTH-1 DOWNTO 0); --drugi operand
-      c_i    : in STD_LOGIC_VECTOR(WIDTH-1 DOWNTO 0);  
-      op_i   : in STD_LOGIC_VECTOR(4 DOWNTO 0); --selekcija operacije
-      res_o  : out STD_LOGIC_VECTOR(WIDTH-1 DOWNTO 0);
-      stall_o: out std_logic
-      );
-  end component;    
+    
 begin
 
    --***********  Sekvencijalna logika  ******************
@@ -306,13 +225,8 @@ begin
                 pc_adder_ex_s           <= (others => '0');
                 rs1_data_ex_s           <= (others => '0');
                 rs2_data_ex_s           <= (others => '0');
-                rs1_data_f_ex_s         <= (others => '0');
-                rs2_data_f_ex_s         <= (others => '0');
-                rs3_data_f_ex_s         <= (others => '0');
-                rd_data_csr_ex_s        <= (others => '0');
                 immediate_extended_ex_s <= (others => '0');
-                rd_address_ex_s         <= (others => '0');   
-                csr_address_ex_s        <= (others => '0');
+                rd_address_ex_s         <= (others => '0');
                 pc_reg_ex_s             <= (others => '0');
                 instruction_ex_s        <= (others => '0');
                 pht_addr_4bit_gshare_ex_s <= (others => '0');       
@@ -325,15 +239,10 @@ begin
             else
                 pc_reg_ex_s               <= pc_reg_id_s;
                 pc_adder_ex_s             <= pc_adder_id_s;
-                rs1_data_ex_s             <= rs1_data_mux_id_s;
+                rs1_data_ex_s             <= rs1_data_id_s;
                 rs2_data_ex_s             <= rs2_data_id_s;
-                rs1_data_f_ex_s           <= rs1_data_f_id_s;
-                rs2_data_f_ex_s           <= rs2_data_f_id_s;
-                rs3_data_f_ex_s           <= rs3_data_f_id_s;
-                rd_data_csr_ex_s          <= rd_data_csr_id_s;  
                 immediate_extended_ex_s   <= immediate_extended_id_s2;
                 rd_address_ex_s           <= rd_address_id_s;
-                csr_address_ex_s          <= csr_address_id_s;
                 instruction_ex_s          <= instruction_id_s;
                 pht_addr_4bit_gshare_ex_s <= pht_addr_4bit_gshare_id_s;       
                 pht_addr_4bit_pshare_ex_s <= pht_addr_4bit_pshare_id_s;
@@ -357,15 +266,11 @@ begin
             alu_forward_b_mem_s   <= (others => '0');
             pc_adder_mem_s   <= (others => '0');
             rd_address_mem_s <= (others => '0');
-            csr_address_mem_s <= (others => '0');
-            rd_data_csr_mem_s <= (others => '0');  
          else
-            alu_result_mem_s <= alu_result_mux_ex_s;
+            alu_result_mem_s <= alu_result_ex_s;
             alu_forward_b_mem_s   <= alu_forward_b_ex_s;
             pc_adder_mem_s   <= pc_adder_ex_s;
             rd_address_mem_s <= rd_address_ex_s;
-            rd_data_csr_mem_s          <= rd_data_csr_ex_s; 
-            csr_address_mem_s <= csr_address_ex_s;
          end if;
       end if;
    end process;
@@ -378,15 +283,11 @@ begin
             alu_result_wb_s    <= (others => '0');
             pc_adder_wb_s      <= (others => '0');
             rd_address_wb_s    <= (others => '0');
-            csr_address_wb_s   <= (others => '0');
-            rd_data_csr_wb_s   <= (others => '0');
             data_mem_read_wb_s <= (others => '0');
          else
             alu_result_wb_s    <= alu_result_mem_s;
             pc_adder_wb_s      <= pc_adder_mem_s;
             rd_address_wb_s    <= rd_address_mem_s;
-            rd_data_csr_wb_s          <= rd_data_csr_mem_s;
-            csr_address_wb_s <= csr_address_mem_s;
             data_mem_read_wb_s <= data_mem_read_mem_s2;
          end if;
       end if;
@@ -471,48 +372,24 @@ begin
                          rs1_data_ex_s;
    alu_forward_b_ex_s <= rd_data_wb_s when alu_forward_b_i = "01" else
                          alu_result_mem_s when alu_forward_b_i = "10" else
-                         (others => '0') when alu_forward_b_i = "11" else
                          rs2_data_ex_s;
 
-    alu_forward_a_f_ex_s <= rd_data_wb_s when alu_forward_a_i = "01" else
-                         alu_result_mem_s when alu_forward_a_i = "10" else
-                         (others => '0') when alu_forward_a_i = "11" else -- Ovo ubacujemo za slucajeve LUI i AUIPC
-                         rs1_data_f_ex_s;
-    alu_forward_b_f_ex_s <= rd_data_wb_s when alu_forward_b_i = "01" else
-                         alu_result_mem_s when alu_forward_b_i = "10" else
-                         (others => '0') when alu_forward_b_i = "11" else
-                         rs2_data_f_ex_s;                     
-    alu_forward_c_f_ex_s <= rd_data_wb_s when alu_forward_c_i = "01" else
-                            alu_result_mem_s when alu_forward_c_i = "10" else
-                            (others => '0') when alu_forward_c_i = "11" else
-                            rs3_data_f_ex_s;        
    -- multiplekser za biranje 'b' operanda alu jedinice
-   b_ex_s <= immediate_extended_ex_s2 when alu_src_b_i = '1' else
+   b_ex_s <= immediate_extended_ex_s when alu_src_b_i = '1' else
              alu_forward_b_ex_s;
 
    a_ex_s <= alu_forward_a_ex_s;
 
-   a_ex_f_s <= alu_forward_a_f_ex_s;
-   b_ex_f_s <= alu_forward_b_f_ex_s when alu_src_b_i = '1' else
-               immediate_extended_ex_s2;
-   c_ex_f_s <= alu_forward_c_f_ex_s;
-
-   -- Multiplekser koji bira izmedju operacija float i integer
-   alu_result_mux_ex_s <= alu_result_ex_s when alu_mux_i = '0' else
-                          alu_result_f_ex_s;  
    -- multiplekser koji selektuje sta se upisuje u odredisni registar
    rd_data_wb_s <= data_mem_read_wb_s when mem_to_reg_i = "01" else
                    pc_adder_wb_s      when mem_to_reg_i = "10" else
                    alu_result_wb_s;
-   -- Ovo je podatak koji vracamo na csr registarsku banku, write faza izvrsavanja         
-   --rd_data_csr_id_s <= rs1_data_id_s; 
 
    -- izdvoji adrese opereanada iz 32-bitne instrukcije
    rs1_address_id_s <= instruction_id_s(19 downto 15);
    rs2_address_id_s <= instruction_id_s(24 downto 20);
-   rs3_address_id_s <= instruction_id_s(31 downto 27);
    rd_address_id_s  <= instruction_id_s(11 downto 7);
-   csr_address_id_s <= instruction_id_s(31 downto 20);
+   
 
    --***********  Instanciranje modula ***********
    -- Registarska banka
@@ -529,22 +406,6 @@ begin
          rs2_data_o    => rs2_data_id_s,
          rd_address_i  => rd_address_wb_s,
          rd_data_i     => rd_data_wb_s);
-
-    register_bank_float_1: register_bank_float
-    generic map (
-        WIDTH => 32)
-     port map (
-        clk           => clk,
-        reset         => reset,
-        rd_we_i       => rd_we_f_i,
-        rs1_address_i => rs1_address_id_s,
-        rs2_address_i => rs2_address_id_s,
-        rs3_address_i => rs3_address_id_s,
-        rs1_data_o    => rs1_data_f_id_s,
-        rs2_data_o    => rs2_data_f_id_s,
-        rs3_data_o    => rs3_data_f_id_s,
-        rd_address_i  => rd_address_wb_s,
-        rd_data_i     => rd_data_wb_s);
 
    -- Jedinice za prosirivanje konstante (immediate)
    immediate_1 : entity work.immediate
@@ -567,20 +428,7 @@ begin
          --zero_o => alu_zero_ex_s,
          --of_o   => alu_of_ex_s
          );
-    ALU_2  : ALU_float 
-    generic map (
-         WIDTH => 32)
-      port map (
-         clk    => clk,
-         reset  => reset,
-         a_ii   => a_ex_s,
-         a_i    => a_ex_f_s, -- Mora da se napravi logika za povezivanje ovih signala, koju vrednost ce primati 
-         b_i    => b_ex_f_s,
-         c_i    => c_ex_f_s,
-         op_i   => alu_op_f_i,
-         res_o  => alu_result_f_ex_s,
-         stall_o=> stall_f_s
-         );       
+
     MHBP_INST:MHBP
     GENERIC MAP(WIDTH       => 4,
                 WIDTH_BHR   => 3,
@@ -605,74 +453,7 @@ begin
                  pht_addr_4bit_GAg          => pht_addr_4bit_GAg_if_s, 
                  pht_addr_4bit_pshare       => pht_addr_4bit_pshare_if_s, 
                  pht_addr_4bit_PAp          => pht_addr_4bit_PAp_if_s
-                 ); 
-    
-    CSR_INST: csr
-    generic map(WIDTH       => 32,
-                WIDTH_ADDR  => 12)
-    port  map (clk  => clk,
-            reset => reset,
-
-            rs1_address_i  => csr_address_id_s,
-            rs1_data_o     => rs1_csr_data_id_s,
-
-            rd_we_i        => rd_csr_we_i,
-            rd_address_i   => csr_address_wb_s,
-            rd_data_i      => rd_data_csr_wb_s);
-                 
-    -- *******************************************************************        
-    --                          ENDCOMPONENT             
-    -- *******************************************************************   
-    
-    -- *******************************************************************        
-    --       MUX INDICATING IF WE TAKE VALUE FOR REG_BANK OR CSR_BANK             
-    -- *******************************************************************   
-    process(csr_int_mux_i,rs1_data_id_s,rs1_csr_data_id_s)
-    begin
-        if csr_int_mux_i = '0' then
-            rs1_data_mux_id_s <= rs1_data_id_s;
-        else
-            rs1_data_mux_id_s <= rs1_csr_data_id_s;
-        end if;
-    end process;
-
-    -- *******************************************************************        
-    --       MUX INDICATING SET/CLEAR IMM in EX phase             
-    -- *******************************************************************          
-
-    process(immediate_extended_ex_s, imm_clr_i)
-    begin
-        if imm_clr_i = '1' then
-            immediate_extended_ex_s2 <= (others => '0');
-        else
-            immediate_extended_ex_s2 <= immediate_extended_ex_s;
-        end if;
-    end process;
-    
-    -- *******************************************************************        
-    --       MUX INDICATING WHAT value will be written to CSR             
-    -- ******************************************************************* 
-
-    process(csr_op_i, rs1_data_id_s, rs1_csr_data_id_s, immediate_extended_id_s)
-    begin
-        case csr_op_i is
-            when "000" =>
-                rd_data_csr_id_s <= rs1_data_id_s;
-            when "001" =>
-                rd_data_csr_id_s <= rs1_data_id_s or rs1_csr_data_id_s;
-            when "010" =>
-                rd_data_csr_id_s <= not(rs1_data_id_s) and rs1_csr_data_id_s;
-            when "011" =>
-                rd_data_csr_id_s <= immediate_extended_id_s;
-            when "100" =>
-                rd_data_csr_id_s <= immediate_extended_id_s or rs1_csr_data_id_s;
-            when "101" =>
-                rd_data_csr_id_s <= not(immediate_extended_id_s) and rs1_csr_data_id_s;
-            when others =>    
-                rd_data_csr_id_s <= rs1_data_id_s;
-        end case;
-    end process;
-
+                 );            
     process(final_pred_s, branch_inst_if_s)
     begin
         if branch_inst_if_s = '1' then
@@ -740,7 +521,7 @@ begin
         end if;
     end process;
     
-    stall_o <= stall_s or stall_f_s;
+    stall_o <= stall_s or stall_i;
 
 
    --***********  Ulazi/Izlazi  ***************
