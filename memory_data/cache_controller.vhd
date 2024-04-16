@@ -67,7 +67,7 @@ architecture Behavioral of cache_controller is
 begin
 
     tag_s       <= proc_addr(9 downto 4);
-    index_s     <= procc_addr(3 downto 2);
+    index_s     <= proc_addr(3 downto 2);
     tag_s_bus   <= bus_addr_i(9 downto 4);
     index_s_bus <= bus_addr_i(3 downto 2);
     bus_addr_o  <= proc_addr; 
@@ -125,7 +125,6 @@ begin
         prrdmiss_o        <= '0';
         prwr_o            <= '0';
         prwrmiss_o        <= '0';
-        cache_o           <= '0';
         stall             <= '0';  
 
         case state_r is
@@ -224,14 +223,14 @@ begin
         end case;
     end process;
 
-    process(index_s_bus, tag_array_r, tag_s_bus, tag_bus) 
+    process(index_s_bus, tag_array_r, tag_s_bus, tag_bus, index0_bus, index1_bus, index2_bus, index3_bus) 
     begin
         tag_bus    <= tag_s_bus; 
         index0_bus <= index_s_bus & "00"; 
         index1_bus <= index_s_bus & "01";
         index2_bus <= index_s_bus & "10";
         index3_bus <= index_s_bus & "11";
-        cache_o    <= '0';
+        
 
         if ((tag_bus(tag_bits-1 downto 0) xor 
              tag_array_r(to_integer(unsigned(index0_bus)))(tag_bits-1 downto 0)) = "000000") then
@@ -239,16 +238,19 @@ begin
                 data_loc_bus_s <= index0_bus;
         elsif ((tag_bus(tag_bits-1 downto 0) xor 
                 tag_array_r(to_integer(unsigned(index1_bus)))(tag_bits-1 downto 0)) = "000000") then
-                    cache_o <= '1';
-                    data_loc_bus_s <= index1_bus;
+                 cache_o <= '1';
+                 data_loc_bus_s <= index1_bus;
         elsif ((tag_bus(tag_bits-1 downto 0) xor 
                 tag_array_r(to_integer(unsigned(index2_bus)))(tag_bits-1 downto 0)) = "000000") then
-                    cache_o <= '1';
-                    data_loc_bus_s <= index2_bus;
+                 cache_o <= '1';
+                 data_loc_bus_s <= index2_bus;
         elsif ((tag_bus(tag_bits-1 downto 0) xor 
                 tag_array_r(to_integer(unsigned(index3_bus)))(tag_bits-1 downto 0)) = "000000") then
-                    cache_o <= '1';
-                    data_loc_bus_s <= index3_bus;
+                 cache_o <= '1';
+                 data_loc_bus_s <= index3_bus;
+        else
+            cache_o <= '0';
+            data_loc_bus_s <= "0000";                          
         end if;
     end process;
 

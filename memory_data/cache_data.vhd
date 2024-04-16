@@ -38,7 +38,7 @@ end cache_data;
 
 architecture Behavioral of cache_data is 
 
-type ram is array (0 to 2**(loc_bits+offset_bits) - 1) of std_logic_vector(mem_word_size-1 downto 0);
+type ram is array (0 to 2**(loc_bits+offset_bits) - 1) of std_logic_vector(word_size-1 downto 0);
 
 component dragon_fsm 
 port(
@@ -83,7 +83,7 @@ signal pos4 : std_logic_vector(loc_bits+offset_bits-1 downto 0); -- postion 4
 
 begin
 
-    dragon_fsm_inst: for i in 0 to 2**loc_bits+offset_bits - 1 generate
+    dragon_fsm_inst: for i in 0 to 2**(loc_bits+offset_bits) - 1 generate
         dragon_fsm_i : dragon_fsm
             port map(
                 clk             => clk,
@@ -98,53 +98,54 @@ begin
                 busrd_o         => busrd_os(i),
                 busupd_o        => busupd_os(i),
                 flush_o         => flush_os(i),
-                update_o        => update_o(i)
+                update_o        => update_os(i)
             );
+    end generate;
+    
+    pos0        <= data_loc & offset;
+    pos0_bus    <= data_loc_bus_i & addr_from_bus(1 downto 0);
 
-    pos0    <= data_loc & offset;
-    pos0_bus <= data_loc_bus_i & addr_from_bus(1 downto 0);
-
-    process(data_loc, offset)
+    process(data_loc, offset, cache_i, prrd_i, prrdmiss_i,prwr_i, prwrmiss_i,busrd_i, busupd_i)
     begin
         for i in 0 to 15
         loop
             for j in 0 to 3
             loop
-                if(i == data_loc and j == offset) then
-                    cache_is         <= cache_i;
-                    prrd_is          <= prrd_i;
-                    prrdmiss_is      <= prrdmiss_i;
-                    prwr_is          <= prwr_i;
-                    prwrmiss_is      <= prwrmiss_i;
-                    busrd_is         <= busrd_i;
-                    busupd_is        <= busupd_i;
+                if(i = to_integer(unsigned(data_loc)) and j = to_integer(unsigned(offset))) then
+                    cache_is(i+j)         <= cache_i;
+                    prrd_is(i+j)          <= prrd_i;
+                    prrdmiss_is(i+j)      <= prrdmiss_i;
+                    prwr_is(i+j)          <= prwr_i;
+                    prwrmiss_is(i+j)      <= prwrmiss_i;
+                    busrd_is(i+j)         <= busrd_i;
+                    busupd_is(i+j)        <= busupd_i;
                 else
-                    cache_is         <= '0';
-                    prrd_is          <= '0';
-                    prrdmiss_is      <= '0';
-                    prwr_is          <= '0';
-                    prwrmiss_is      <= '0';
-                    busrd_is         <= '0';
-                    busupd_is        <= '0';
+                    cache_is(i+j)         <= '0';
+                    prrd_is(i+j)          <= '0';
+                    prrdmiss_is(i+j)      <= '0';
+                    prwr_is(i+j)          <= '0';
+                    prwrmiss_is(i+j)      <= '0';
+                    busrd_is(i+j)         <= '0';
+                    busupd_is(i+j)        <= '0';
                 end if;
-            end loop
+            end loop;
         end loop;
-    end
+    end process;
 
-    process(pos0)
+    process(pos0, busrd_os, busupd_os, flush_os, update_os)
     begin
-        busrd_o         <= busrd_os(pos0),
-        busupd_o        <= busupd_os(pos0),
-        flush_o         <= flush_os(pos0),
-        update_o        <= update_o(pos0)
-    end
+        busrd_o         <= busrd_os(to_integer(unsigned(pos0)));
+        busupd_o        <= busupd_os(to_integer(unsigned(pos0)));
+        flush_o         <= flush_os(to_integer(unsigned(pos0)));
+        update_o        <= update_os(to_integer(unsigned(pos0)));
+    end process;
 
     writing_process:process(clk)
                     begin
                         if rising_edge(clk)then
-                            if prwr_is = '1' then
+                            if prwr_is(to_integer(unsigned(pos0))) = '1' then
                                 cache(to_integer(unsigned(pos0))) <= data_from_proc;
-                            elsif prrdmiss_i = '1' then
+                            elsif prrdmiss_is(to_integer(unsigned(pos0))) = '1' then
                                 cache(to_integer(unsigned(pos0))) <= data_from_bus;
                             end if;    
                         end if;
@@ -158,4 +159,4 @@ begin
                         data_to_bus  <= cache(to_integer(unsigned(pos0_bus)));
                     end if;
                  end process;
-end Behavioral;
+end architecture;

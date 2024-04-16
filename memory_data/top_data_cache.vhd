@@ -36,7 +36,7 @@ entity top_data_cache is
         data_from_bus   : in std_logic_vector(word_size - 1 downto 0);  -- data from memory
         data_from_proc  : in std_logic_vector(word_size - 1 downto 0); -- data from processor
         data_to_bus     : out std_logic_vector(word_size - 1 downto 0); -- evicted block data in case of a write miss
-        data_to_proc    : out std_logic_vector(word_size - 1 downto 0) -- data to processor
+        data_to_proc    : out std_logic_vector(word_size - 1 downto 0); -- data to processor
 
         -- cache controller
         proc_rd         : in std_logic;

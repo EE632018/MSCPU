@@ -20,7 +20,7 @@ entity core is
         flush_o         : out std_logic;
         update_o        : out std_logic;
         data_from_bus   : in std_logic_vector(word_size - 1 downto 0);
-        data_to_bus     : in std_logic_vector(word_size - 1 downto 0);
+        data_to_bus     : out std_logic_vector(word_size - 1 downto 0);
 
         -- BUS <-> CACHE CONTROLLER CONNECTION
         bus_addr_o      : out std_logic_vector(addr_w - 1 downto 0);
@@ -143,7 +143,7 @@ begin
         bus_addr_o      => bus_addr_o,
         bus_addr_i      => bus_addr_i,
         stall           => stall_s,
-        cache_o         => cache_o,
+        cache_o         => cache_o
     );
 
 

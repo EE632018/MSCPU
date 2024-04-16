@@ -30,17 +30,17 @@ begin
 
     process(clk, reset)
     begin
-        if(!reset)then
-            fsm_r <= fsm_nxt;  
+        if(reset = '0')then
+            fsm_r <= IDLE;  
         elsif(rising_edge(clk)) then
             fsm_r <= fsm_nxt;
         end if;
-    end
+    end process;
 
-    process(fsm_r, prrd_i, prrdmiss_i, prwr_i, prwrmiss_i, busrd_i, busupd_i)
+    process(fsm_r, prrd_i, prrdmiss_i, prwr_i, prwrmiss_i, busrd_i, busupd_i,cache_i)
     begin
 
-        fsm_nxt <= fms_r;
+        fsm_nxt <= fsm_r;
 
         case(fsm_r) is
             when IDLE =>
@@ -79,9 +79,9 @@ begin
                 end if;
             when others =>
         end case;
-    end
+    end process;
 
-    process(fsm_r, prrd_i, prrdmiss_i, prwr_i, prwrmiss_i, busrd_i, busupd_i)
+    process(fsm_r, prrd_i, prrdmiss_i, prwr_i, prwrmiss_i, busrd_i, busupd_i, cache_i)
     begin
 
         busrd_o     <= '0';
@@ -114,9 +114,9 @@ begin
                 end if;
             when M =>
                 if (busrd_i = '1') then
-                    flush_o     <= '1'
+                    flush_o     <= '1';
                 end if;
             when others =>
         end case;
-    end
+    end process;
 end architecture;
