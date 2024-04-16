@@ -6,13 +6,8 @@ entity cache_data is
     generic(
         loc_bits        : integer := 4; -- 16 entries
         offset_bits     : integer := 2; -- to choose one of four words
-        block_size      : integer := 128; -- 32*4 
-        mem_word_size   : integer := 32; -- word size of memory
-        proc_word_size  : integer := 32; -- word size of processor
-        blk_0_offset    : integer := 127; -- cache block --> | blk0 | blk1 | blk2 | blk3
-        blk_1_offset    : integer := 95;
-        blk_2_offset    : integer := 63;
-        blk_3_offset    : integer := 31
+        word_size       : integer := 32; -- word size 
+        addr_w          : integer := 10
     );
     port(
         clk             : in std_logic; -- same as processor
@@ -30,14 +25,14 @@ entity cache_data is
         flush_o         : out std_logic;
         update_o        : out std_logic;
         data_loc        : in std_logic_vector(loc_bits-1 downto 0); -- data_loc selection
-        data_loc_bus_i  : in std_logic_vector(3 downto 0);
+        data_loc_bus_i  : in std_logic_vector(loc_bits-1 downto 0);
         offset          : in std_logic_vector(offset_bits-1 downto 0); -- offset selection
         
-        data_from_bus   : in std_logic_vector(31 downto 0);  -- data from memory
-        data_from_proc  : in std_logic_vector(31 downto 0); -- data from processor
-        data_to_bus     : out std_logic_vector(31 downto 0); -- evicted block data in case of a write miss
-        addr_from_bus   : in std_logic_vector(9 downto 0);
-        data_to_proc    : out std_logic_vector(31 downto 0) -- data to processor
+        data_from_bus   : in std_logic_vector(word_size - 1 downto 0);  -- data from memory
+        data_from_proc  : in std_logic_vector(word_size - 1 downto 0); -- data from processor
+        data_to_bus     : out std_logic_vector(word_size - 1 downto 0); -- evicted block data in case of a write miss
+        addr_from_bus   : in std_logic_vector(addr_w - 1 downto 0);
+        data_to_proc    : out std_logic_vector(word_size - 1 downto 0) -- data to processor
     );
 end cache_data;
 

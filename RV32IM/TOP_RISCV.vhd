@@ -16,8 +16,8 @@ entity TOP_RISCV is
       data_mem_write_o    : out std_logic_vector(31 downto 0);
       data_mem_we_o       : out std_logic_vector(3 downto 0);
       data_mem_rd_o       : out std_logic_vector(3 downto 0);
-      stall_i             : in  std_logic
-      -- rd signal kada citamo podatak );  
+      stall_i             : in  std_logic 
+   );  
 end entity;
 
 architecture structural of TOP_RISCV is

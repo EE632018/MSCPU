@@ -6,7 +6,8 @@ entity cache_controller is
     generic(
         index_bits      : integer := 2;
         set_offset_bits : integer := 2;
-        tag_bits        : integer := 6
+        tag_bits        : integer := 6;
+        addr_w          : integer := 10
     );
 
     port(
@@ -16,14 +17,14 @@ entity cache_controller is
         -- Signals from/to processor
         proc_rd     : in std_logic;
         proc_wr     : in std_logic;
-        proc_addr   : in std_logic_vector(9 downto 0);
-        bus_addr_o  : out std_logic_vector(9 downto 0);
-        bus_addr_i  : in std_logic_vector(9 downto 0);
+        proc_addr   : in std_logic_vector(addr_w - 1 downto 0);
+        bus_addr_o  : out std_logic_vector(addr_w - 1 downto 0);
+        bus_addr_i  : in std_logic_vector(addr_w - 1 downto 0);
         stall       : out std_logic;
 
         -- Signals to cache
-        data_loc        : out std_logic_vector(3 downto 0);
-        data_loc_bus_o  : out std_logic_vector(3 downto 0);
+        data_loc        : out std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
+        data_loc_bus_o  : out std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
         cache_o         : out std_logic; -- there is this value in other cache
         prrd_o          : out std_logic;
         prrdmiss_o      : out std_logic;
@@ -125,10 +126,10 @@ begin
         prwr_o            <= '0';
         prwrmiss_o        <= '0';
         cache_o           <= '0';
+        stall             <= '0';  
 
         case state_r is
             when IDLE               =>
-                stall       <= '0';
 
                 tag_nxt     <= tag_s;
                 index0_nxt  <= index_s & "00";
@@ -217,6 +218,8 @@ begin
                         data_loc_nxt <= index_s & (not(s_ptr_r(to_integer(unsigned(index_s))))) & (not l_ptr_r(to_integer(unsigned(index_s))));
                     end if;
                 end if;
+                stall <= '0';
+                state_nxt <= IDLE;
             when others => 
         end case;
     end process;
