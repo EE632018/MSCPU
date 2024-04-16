@@ -5,7 +5,8 @@ use ieee.numeric_std.all;
 entity core is
     generic(
         addr_w          : integer := 10;
-        word_size       : integer := 32
+        word_size       : integer := 32;
+        block_size      : integer := 128
     );
     port (
         clk     : in std_logic;
@@ -25,7 +26,12 @@ entity core is
         -- BUS <-> CACHE CONTROLLER CONNECTION
         bus_addr_o      : out std_logic_vector(addr_w - 1 downto 0);
         bus_addr_i      : in std_logic_vector(addr_w - 1 downto 0);
-        cache_o         : out std_logic
+        cache_o         : out std_logic;
+
+        -- CACHE INSTRUCTION 
+        instruction_from_bus    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
+        read_from_bus           : out std_logic;
+        mem_addr                : out std_logic_vector(addr_w - 1 downto 0)
     );
 end core;
 
@@ -96,27 +102,62 @@ architecture Behavioral of core is
     );
     end component;
 
+    component top_instruction_cache
+    generic(
+        -- default from processor
+        instruction_bus_w       : integer := 32;
+        addr_bus_w              : integer := 32;
+        -- default from cache controller
+        index_bits              : integer := 2;
+        tag_bits                : integer := 6;
+        set_offset_bits         : integer := 2;
+        -- default from cache memory
+        loc_bits                : integer := 4;
+        offset_bits             : integer := 2;
+        block_size              : integer := 128;
+        -- default from memory
+        addr_w                  : integer := 10;
+        word_size               : integer := 32
+    
+    );
+    port(
+        clk                     : in std_logic;
+        reset                   : in std_logic;
+        rd                      : in std_logic;
+        addr                    : in std_logic_vector(addr_w - 1 downto 0);
+
+        instruction_to_proc     : out std_logic_vector(word_size-1 downto 0); -- instruction to processor
+        instruction_from_bus    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
+        read_from_bus           : out std_logic;
+        mem_addr                : out std_logic_vector(tag_bits+index_bits+set_offset_bits-1 downto 0);
+        stall                   : out std_logic
+    );
+    end component;
+
     signal instr_mem_read_s     : std_logic_vector(31 downto 0);
+    signal instr_mem_address_s  : std_logic_vector(31 downto 0);
     signal data_mem_address_s   : std_logic_vector(31 downto 0);
     signal data_mem_read_s      : std_logic_vector(31 downto 0);
     signal data_mem_write_s     : std_logic_vector(31 downto 0);
     signal data_mem_we_s        : std_logic_vector(3 downto 0);
     signal data_mem_rd_s        : std_logic_vector(3 downto 0);
     signal stall_s              : std_logic;
+    signal stall_is             : std_logic;
+    signal stall_proc           : std_logic;
 begin
 
     inst_cpu: TOP_RISCV
     port map(
       clk                 => clk,
       reset               => reset,
-      instr_mem_address_o => open,
+      instr_mem_address_o => instr_mem_address_s,
       instr_mem_read_i    => instr_mem_read_s,
       data_mem_address_o  => data_mem_address_s,
       data_mem_read_i     => data_mem_read_s,
       data_mem_write_o    => data_mem_write_s,
       data_mem_we_o       => data_mem_we_s,
       data_mem_rd_o       => data_mem_rd_s,
-      stall_i             => stall_s
+      stall_i             => stall_proc
     );
 
     inst_cache: top_data_cache
@@ -146,5 +187,19 @@ begin
         cache_o         => cache_o
     );
 
+    inst_instruction_cache: top_instruction_cache
+    port map(
+        clk                   => clk, 
+        reset                 => reset, 
+        rd                    => '1', 
+        addr                  => instr_mem_address_s(9 downto 0),
+        instruction_to_proc   => instr_mem_read_s,  
+        instruction_from_bus  => instruction_from_bus,  
+        read_from_bus         => read_from_bus,  
+        mem_addr              => mem_addr,  
+        stall                 => stall_is                                                   
+    );
 
+    stall_proc <= stall_s or stall_is;
+    
 end Behavioral;

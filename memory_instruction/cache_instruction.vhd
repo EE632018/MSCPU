@@ -19,7 +19,7 @@ entity cache_instruction is
         refill                  : in std_logic; -- miss, refill cache using instruction from memory
         instruction_loc         : in std_logic_vector(loc_bits-1 downto 0); -- instruction_loc selection
         offset                  : in std_logic_vector(offset_bits-1 downto 0); -- offset selection
-        instruction_from_mem    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
+        instruction_from_bus    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
         instruction_to_proc     : out std_logic_vector(proc_word_size-1 downto 0) -- instruction to processor
     );
 end cache_instruction;
@@ -48,10 +48,10 @@ begin
                     begin
                         if rising_edge(clk)then
                             if refill = '1' then
-                                cache(to_integer(unsigned(pos1))) <= instruction_from_mem(blk_0_offset downto blk_1_offset+1);
-                                cache(to_integer(unsigned(pos2))) <= instruction_from_mem(blk_1_offset downto blk_2_offset+1);
-                                cache(to_integer(unsigned(pos3))) <= instruction_from_mem(blk_2_offset downto blk_3_offset+1);
-                                cache(to_integer(unsigned(pos4))) <= instruction_from_mem(blk_3_offset downto 0);
+                                cache(to_integer(unsigned(pos1))) <= instruction_from_bus(blk_0_offset downto blk_1_offset+1);
+                                cache(to_integer(unsigned(pos2))) <= instruction_from_bus(blk_1_offset downto blk_2_offset+1);
+                                cache(to_integer(unsigned(pos3))) <= instruction_from_bus(blk_2_offset downto blk_3_offset+1);
+                                cache(to_integer(unsigned(pos4))) <= instruction_from_bus(blk_3_offset downto 0);
                             end if;    
                         end if;
                     end process;

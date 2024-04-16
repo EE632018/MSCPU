@@ -218,6 +218,7 @@ begin
                     end if;
                 end if;
                 stall <= '0';
+                tag_array_nxt(to_integer(unsigned(data_loc_nxt))) <= '0' & tag_r;
                 state_nxt <= IDLE;
             when others => 
         end case;
