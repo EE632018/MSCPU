@@ -24,6 +24,7 @@ entity cache_data is
         busupd_o        : out std_logic;
         flush_o         : out std_logic;
         update_o        : out std_logic;
+        send_to_mem_o   : out std_logic;
         data_loc        : in std_logic_vector(loc_bits-1 downto 0); -- data_loc selection
         data_loc_bus_i  : in std_logic_vector(loc_bits-1 downto 0);
         offset          : in std_logic_vector(offset_bits-1 downto 0); -- offset selection
@@ -32,7 +33,9 @@ entity cache_data is
         data_from_proc  : in std_logic_vector(word_size - 1 downto 0); -- data from processor
         data_to_bus     : out std_logic_vector(word_size - 1 downto 0); -- evicted block data in case of a write miss
         addr_from_bus   : in std_logic_vector(addr_w - 1 downto 0);
-        data_to_proc    : out std_logic_vector(word_size - 1 downto 0) -- data to processor
+        data_to_proc    : out std_logic_vector(word_size - 1 downto 0); -- data to processor
+        data_to_mem     : out std_logic_vector(word_size - 1 downto 0)
+        
     );
 end cache_data;
 
@@ -54,7 +57,8 @@ port(
     busrd_o         : out std_logic;
     busupd_o        : out std_logic;
     flush_o         : out std_logic;
-    update_o        : out std_logic
+    update_o        : out std_logic;
+    send_to_mem_o   : out std_logic
 );
 end component;
 
@@ -71,6 +75,7 @@ signal busrd_os         : cache_cnt;
 signal busupd_os        : cache_cnt;
 signal flush_os         : cache_cnt;
 signal update_os        : cache_cnt;
+signal send_to_mem_os   : cache_cnt;
 
 signal cache : ram := (others => (others => '0'));
 
@@ -98,37 +103,35 @@ begin
                 busrd_o         => busrd_os(i),
                 busupd_o        => busupd_os(i),
                 flush_o         => flush_os(i),
-                update_o        => update_os(i)
+                update_o        => update_os(i),
+                send_to_mem_o   => send_to_mem_os(i)
             );
     end generate;
     
     pos0        <= data_loc & offset;
     pos0_bus    <= data_loc_bus_i & addr_from_bus(1 downto 0);
 
-    process(data_loc, offset, cache_i, prrd_i, prrdmiss_i,prwr_i, prwrmiss_i,busrd_i, busupd_i)
+    process(data_loc, offset, cache_i, prrd_i, prrdmiss_i,prwr_i, prwrmiss_i,busrd_i, busupd_i, pos0)
     begin
-        for i in 0 to 15
+        for i in 0 to 63
         loop
-            for j in 0 to 3
-            loop
-                if(i = to_integer(unsigned(data_loc)) and j = to_integer(unsigned(offset))) then
-                    cache_is(i+j)         <= cache_i;
-                    prrd_is(i+j)          <= prrd_i;
-                    prrdmiss_is(i+j)      <= prrdmiss_i;
-                    prwr_is(i+j)          <= prwr_i;
-                    prwrmiss_is(i+j)      <= prwrmiss_i;
-                    busrd_is(i+j)         <= busrd_i;
-                    busupd_is(i+j)        <= busupd_i;
+                if(i = to_integer(unsigned(pos0))) then
+                    cache_is(i)         <= cache_i;
+                    prrd_is(i)          <= prrd_i;
+                    prrdmiss_is(i)      <= prrdmiss_i;
+                    prwr_is(i)          <= prwr_i;
+                    prwrmiss_is(i)      <= prwrmiss_i;
+                    busrd_is(i)         <= busrd_i;
+                    busupd_is(i)        <= busupd_i;
                 else
-                    cache_is(i+j)         <= '0';
-                    prrd_is(i+j)          <= '0';
-                    prrdmiss_is(i+j)      <= '0';
-                    prwr_is(i+j)          <= '0';
-                    prwrmiss_is(i+j)      <= '0';
-                    busrd_is(i+j)         <= '0';
-                    busupd_is(i+j)        <= '0';
+                    cache_is(i)         <= '0';
+                    prrd_is(i)          <= '0';
+                    prrdmiss_is(i)      <= '0';
+                    prwr_is(i)          <= '0';
+                    prwrmiss_is(i)      <= '0';
+                    busrd_is(i)         <= '0';
+                    busupd_is(i)        <= '0';
                 end if;
-            end loop;
         end loop;
     end process;
 
@@ -138,6 +141,7 @@ begin
         busupd_o        <= busupd_os(to_integer(unsigned(pos0)));
         flush_o         <= flush_os(to_integer(unsigned(pos0)));
         update_o        <= update_os(to_integer(unsigned(pos0)));
+        send_to_mem_o   <= send_to_mem_os(to_integer(unsigned(pos0)));
     end process;
 
     writing_process:process(clk)
@@ -159,4 +163,5 @@ begin
                         data_to_bus  <= cache(to_integer(unsigned(pos0_bus)));
                     end if;
                  end process;
+    data_to_mem <= cache(to_integer(unsigned(pos0)));  
 end architecture;

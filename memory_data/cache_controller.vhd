@@ -29,7 +29,8 @@ entity cache_controller is
         prrd_o          : out std_logic;
         prrdmiss_o      : out std_logic;
         prwr_o          : out std_logic;
-        prwrmiss_o      : out std_logic
+        prwrmiss_o      : out std_logic;
+        src_cache_o     : out std_logic -- pretraga cache koja mi kaze kada da drugi pogledaju
 
     );
 end cache_controller;
@@ -37,7 +38,7 @@ end cache_controller;
 
 architecture Behavioral of cache_controller is
 
-    type tag_array  is array (0 to 2**(index_bits+set_offset_bits) - 1) of std_logic_vector(tag_bits downto 0);
+    type tag_array  is array (0 to 2**(index_bits+set_offset_bits) - 1) of std_logic_vector(tag_bits-1 downto 0);
     type ptr_array is array (0 to 2**index_bits-1) of std_logic;
     type state is (IDLE, COMPARE_TAG);
     signal state_r, state_nxt                   : state     := IDLE;
@@ -64,6 +65,11 @@ architecture Behavioral of cache_controller is
     signal index1_bus                           : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
     signal index2_bus                           : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
     signal index3_bus                           : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
+
+    signal prrd_s          : std_logic;
+    signal prrdmiss_s      : std_logic;
+    signal prwr_s          : std_logic;
+    signal prwrmiss_s      : std_logic;
 begin
 
     tag_s       <= proc_addr(9 downto 4);
@@ -121,10 +127,10 @@ begin
         index2_nxt        <= index2_r;
         index3_nxt        <= index3_r;
 
-        prrd_o            <= '0';
-        prrdmiss_o        <= '0';
-        prwr_o            <= '0';
-        prwrmiss_o        <= '0';
+        prrd_s            <= '0';
+        prrdmiss_s        <= '0';
+        prwr_s            <= '0';
+        prwrmiss_s        <= '0';
         stall             <= '0';  
 
         case state_r is
@@ -145,9 +151,9 @@ begin
                     tag_array_r(to_integer(unsigned(index0_r)))(tag_bits-1 downto 0)) = "000000") then
                         data_loc_nxt <= index0_r;
                         if proc_rd = '1' then
-                            prrd_o <= '1';
+                            prrd_s <= '1';
                         elsif proc_wr = '1' then
-                            prwr_o <= '1';
+                            prwr_s <= '1';
                         end if;
                     if data_loc_nxt(1) = '1' then
                         s_ptr_nxt(to_integer(unsigned(index_s))) <= '1';
@@ -160,9 +166,9 @@ begin
                     tag_array_r(to_integer(unsigned(index1_r)))(tag_bits-1 downto 0)) = "000000") then
                     data_loc_nxt <= index1_r;
                     if proc_rd = '1' then
-                        prrd_o <= '1';
+                        prrd_s <= '1';
                     elsif proc_wr = '1' then
-                        prwr_o <= '1';
+                        prwr_s <= '1';
                     end if;
                     if data_loc_nxt(1) = '1' then
                         s_ptr_nxt(to_integer(unsigned(index_s))) <= '1';
@@ -175,9 +181,9 @@ begin
                     tag_array_r(to_integer(unsigned(index2_r)))(tag_bits-1 downto 0)) = "000000") then
                     data_loc_nxt <= index2_r;
                     if proc_rd = '1' then
-                        prrd_o <= '1';
+                        prrd_s <= '1';
                     elsif proc_wr = '1' then
-                        prwr_o <= '1';
+                        prwr_s <= '1';
                     end if;
                     if data_loc_nxt(1) = '1' then
                         s_ptr_nxt(to_integer(unsigned(index_s))) <= '1';
@@ -190,9 +196,9 @@ begin
                     tag_array_r(to_integer(unsigned(index3_r)))(tag_bits-1 downto 0)) = "000000") then
                     data_loc_nxt <= index3_r;
                     if proc_rd = '1' then
-                        prrd_o <= '1';
+                        prrd_s <= '1';
                     elsif proc_wr = '1' then
-                        prwr_o <= '1';
+                        prwr_s <= '1';
                     end if;   
                     if data_loc_nxt(1) = '1' then
                         s_ptr_nxt(to_integer(unsigned(index_s))) <= '1';
@@ -203,9 +209,9 @@ begin
                     end if;
                 else
                     if proc_rd = '1' then
-                        prrdmiss_o <= '1';
+                        prrdmiss_s <= '1';
                     elsif proc_wr = '1' then
-                        prwrmiss_o <= '1';
+                        prwrmiss_s <= '1';
                     end if;
                     if s_ptr_r(to_integer(unsigned(index_s))) = '0' then
                         s_ptr_nxt(to_integer(unsigned(index_s))) <= '1';
@@ -255,5 +261,14 @@ begin
         end if;
     end process;
 
-    data_loc_bus_o <= data_loc_bus_s;
+    data_loc_bus_o  <= data_loc_bus_s;
+    data_loc        <= data_loc_r;
+    prrd_o          <= prrd_s;
+    prwr_o          <= prwr_s;
+    prrdmiss_o      <= prrdmiss_s;
+    prwrmiss_o      <= prwrmiss_s;
+
+    src_cache_o <= '1' when (prwr_s = '1' or prwrmiss_s = '1' or prrdmiss_s = '1') else
+                   '0';
+
 end Behavioral;

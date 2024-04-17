@@ -16,7 +16,8 @@ entity dragon_fsm is
         busrd_o         : out std_logic;
         busupd_o        : out std_logic;
         flush_o         : out std_logic;
-        update_o        : out std_logic
+        update_o        : out std_logic;
+        send_to_mem_o   : out std_logic
     );
 end dragon_fsm;
 
@@ -60,22 +61,38 @@ begin
                     fsm_nxt <= M;
                 elsif busrd_i = '1' then
                     fsm_nxt <= Sc;
+                elsif prrd_i = '1' then
+                    fsm_nxt <= E;                
                 end if;
             when Sc =>
                 if prwr_i = '1' and cache_i = '1' then
                     fsm_nxt <= Sm;
                 elsif prwr_i = '1' and cache_i = '0' then
                     fsm_nxt <= M;
+                elsif prrd_i = '1' then
+                    fsm_nxt <= Sc;  
+                elsif busrd_i = '1' then
+                    fsm_nxt <= Sc;              
                 end if;
             when Sm =>
                 if prwr_i = '1' and cache_i = '0' then
                     fsm_nxt <= M;
                 elsif busupd_i = '1' then
                     fsm_nxt <= Sc;
+                elsif busrd_i = '1' then
+                    fsm_nxt <= Sm;
+                elsif prwr_i = '1' and cache_i = '1' then
+                    fsm_nxt <= Sm;
+                elsif prrd_i = '1' then
+                    fsm_nxt <= Sm;                
                 end if;
             when M =>
                 if busrd_i = '1' then
                     fsm_nxt <= Sm;
+                elsif prwr_i = '1' then
+                    fsm_nxt <= M;
+                elsif prrd_i = '1' then
+                    fsm_nxt <= M;                
                 end if;
             when others =>
         end case;
@@ -88,7 +105,7 @@ begin
         busupd_o    <= '0';
         flush_o     <= '0';
         update_o    <= '0';
-
+        send_to_mem <= '0';
         case(fsm_r) is
             when IDLE =>
                 if(prrdmiss_i = '1') then
@@ -107,12 +124,18 @@ begin
                     update_o   <= '1';
                 end if;
             when Sm =>
+                if (prrdmiss_i = '1') then
+                    send_to_mem_o <= '1';
+                end if;
                 if (prwr_i = '1') then
                     busupd_o    <= '1';
                 elsif busrd_i = '1' then
                     flush_o     <= '1';
                 end if;
-            when M =>
+            when M =>    
+                if (prrdmiss_i = '1') then
+                    send_to_mem_o <= '1';
+                end if;    
                 if (busrd_i = '1') then
                     flush_o     <= '1';
                 end if;

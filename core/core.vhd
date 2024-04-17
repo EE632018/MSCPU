@@ -9,8 +9,8 @@ entity core is
         block_size      : integer := 128
     );
     port (
-        clk     : in std_logic;
-        reset   : in std_logic;
+        clk             : in std_logic;
+        reset           : in std_logic;
 
         -- BUS <-> CACHE CONNECTION
         cache_i         : in std_logic;
@@ -20,8 +20,10 @@ entity core is
         busupd_o        : out std_logic;
         flush_o         : out std_logic;
         update_o        : out std_logic;
+        send_to_mem_o   : out std_logic;
         data_from_bus   : in std_logic_vector(word_size - 1 downto 0);
         data_to_bus     : out std_logic_vector(word_size - 1 downto 0);
+        data_to_mem     : out std_logic_vector(word_size - 1 downto 0);
 
         -- BUS <-> CACHE CONTROLLER CONNECTION
         bus_addr_o      : out std_logic_vector(addr_w - 1 downto 0);
@@ -31,7 +33,9 @@ entity core is
         -- CACHE INSTRUCTION 
         instruction_from_bus    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
         read_from_bus           : out std_logic;
-        mem_addr                : out std_logic_vector(addr_w - 1 downto 0)
+        mem_addr                : out std_logic_vector(addr_w - 1 downto 0);
+        stall_a                 : in std_logic; -- arbiter
+        src_cache_o             : out std_logic
     );
 end core;
 
@@ -86,10 +90,12 @@ architecture Behavioral of core is
         busupd_o        : out std_logic;
         flush_o         : out std_logic;
         update_o        : out std_logic;
+        send_to_mem_o   : out std_logic;
         data_from_bus   : in std_logic_vector(word_size - 1 downto 0);  -- data from memory
         data_from_proc  : in std_logic_vector(word_size - 1 downto 0); -- data from processor
         data_to_bus     : out std_logic_vector(word_size - 1 downto 0); -- evicted block data in case of a write miss
         data_to_proc    : out std_logic_vector(word_size - 1 downto 0); -- data to processor
+        data_to_mem     : out std_logic_vector(word_size - 1 downto 0);
 
         -- cache controller
         proc_rd         : in std_logic;
@@ -98,7 +104,8 @@ architecture Behavioral of core is
         bus_addr_o      : out std_logic_vector(addr_w - 1 downto 0);
         bus_addr_i      : in std_logic_vector(addr_w - 1 downto 0);
         stall           : out std_logic;
-        cache_o         : out std_logic
+        cache_o         : out std_logic;
+        src_cache_o     : out std_logic
     );
     end component;
 
@@ -172,11 +179,12 @@ begin
         busupd_o        => busupd_o,
         flush_o         => flush_o,
         update_o        => update_o,
+        send_to_mem_o   => send_to_mem_o,
         data_from_bus   => data_from_bus,  
         data_from_proc  => data_mem_write_s, 
         data_to_bus     => data_to_bus, 
         data_to_proc    => data_mem_read_s, 
-
+        data_to_mem     => data_to_mem,
         -- cache controller
         proc_rd         => data_mem_rd_s(0),
         proc_wr         => data_mem_we_s(0),
@@ -184,7 +192,8 @@ begin
         bus_addr_o      => bus_addr_o,
         bus_addr_i      => bus_addr_i,
         stall           => stall_s,
-        cache_o         => cache_o
+        cache_o         => cache_o,
+        src_cache_o     => src_cache_o   
     );
 
     inst_instruction_cache: top_instruction_cache
@@ -200,6 +209,6 @@ begin
         stall                 => stall_is                                                   
     );
 
-    stall_proc <= stall_s or stall_is;
+    stall_proc <= stall_s or stall_is or stall_a;
     
 end Behavioral;
