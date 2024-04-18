@@ -11,7 +11,6 @@ entity mem_instruction is
     port(
         clk             : in std_logic;
         reset           : in std_logic;
-        read_from_mem   : in std_logic; -- read signal
         addr            : in std_logic_vector(addr_size - 1 downto 0);
         instruction_o   : out std_logic_vector(block_size - 1 downto 0)    
     );

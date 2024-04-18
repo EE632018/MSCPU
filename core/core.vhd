@@ -34,6 +34,7 @@ entity core is
         instruction_from_bus    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
         read_from_bus           : out std_logic;
         mem_addr                : out std_logic_vector(addr_w - 1 downto 0);
+        refill                  : out std_logic;
         stall_a                 : in std_logic; -- arbiter
         src_cache_o             : out std_logic
     );
@@ -132,7 +133,7 @@ architecture Behavioral of core is
         reset                   : in std_logic;
         rd                      : in std_logic;
         addr                    : in std_logic_vector(addr_w - 1 downto 0);
-
+        refill                  : out std_logic;
         instruction_to_proc     : out std_logic_vector(word_size-1 downto 0); -- instruction to processor
         instruction_from_bus    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
         read_from_bus           : out std_logic;
@@ -205,6 +206,7 @@ begin
         instruction_to_proc   => instr_mem_read_s,  
         instruction_from_bus  => instruction_from_bus,  
         read_from_bus         => read_from_bus,  
+        refill                => refill,
         mem_addr              => mem_addr,  
         stall                 => stall_is                                                   
     );

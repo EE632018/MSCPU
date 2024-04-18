@@ -29,6 +29,7 @@ entity top_instruction_cache is
         instruction_to_proc     : out std_logic_vector(word_size-1 downto 0); -- instruction to processor
         instruction_from_bus    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
         read_from_bus           : out std_logic;
+        refill                  : out std_logic;
 
         mem_addr                : out std_logic_vector(tag_bits+index_bits+set_offset_bits-1 downto 0);
         stall                   : out std_logic
@@ -111,4 +112,5 @@ begin
         stall           => stall
     );
 
+    refill <= refill_s;
 end Behavioral;

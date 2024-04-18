@@ -33,7 +33,15 @@ entity arbiter is
         bus_addr_i      : in std_logic_vector(num_of_cores * addr_w - 1 downto 0);
         cache_i         : in std_logic_vector(num_of_cores - 1 downto 0);
         stall_a         : out std_logic_vector(num_of_cores - 1 downto 0);
-        src_cache_i     : in std_logic_vector(num_of_cores - 1 downto 0)
+        src_cache_i     : in std_logic_vector(num_of_cores - 1 downto 0);
+
+        -- INSTRUCTION BUS 
+        instruction_to_bus      : out std_logic_vector(block_size-1 downto 0);  -- instruction from memory
+        instruction_from_mem    : in std_logic_vector(block_size-1 downto 0);
+        read_from_bus           : in std_logic_vector(num_of_cores - 1 downto 0);
+        mem_addr                : in std_logic_vector(num_of_cores * addr_w - 1 downto 0);
+        refill                  : in std_logic_vector(num_of_cores - 1 downto 0);
+        addr_to_mem             : out std_logic_vector(addr_w - 1 downto 0)
     );
 end arbiter;
 
