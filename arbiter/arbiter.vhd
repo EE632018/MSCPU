@@ -21,6 +21,7 @@ entity arbiter is
         flush_i         : in std_logic_vector(num_of_cores - 1 downto 0);
         update_i        : in std_logic_vector(num_of_cores - 1 downto 0);
         send_to_mem_i   : in std_logic_vector(num_of_cores - 1 downto 0);
+        send_from_mem_o : out std_logic; -- this is read enable signal, to read some data from main memory to some core
 
         data_from_bus   : out std_logic_vector(word_size - 1 downto 0);
         data_from_mem   : in std_logic_vector(word_size - 1 downto 0);
@@ -38,9 +39,11 @@ end arbiter;
 
 architecture Behavioral of arbiter is
 
+    signal cache_s : std_logic_vector(num_of_cores - 1 downto 0);
+
 begin
 
-    process()
+    process(busrd_i, cache_i, busupd_i, update_i, flush_i)
     begin
         stall_a <= (others => '1');
         busrd_o <= (others => '1');
@@ -48,18 +51,21 @@ begin
             if(busrd_i(i) = '1' or cache_i(i) = '1' or busupd_i(i) = '1' or update_i(i) = '1' or flush_i(i) = '1')then
                 stall_a(i) <= '0';
                 busrd_o(i) <= busrd_i(i);
-                cache_o(i) <= cache_i(i);
+                cache_s(i) <= cache_i(i);
                 busupd_o(i) <= busupd_i(i);
             else
                 stall_a <= (others => '1');
                 busrd_o <= (others => '0');
-                cache_o <= (others => '0');
+                cache_s <= (others => '0');
                 busupd_o <= (others => '0');
             end if;
         end loop;
     end process;
 
-    process()
+    cache_o <= cache_s;
+
+
+    process(flush_i, update_i, data_to_bus, data_from_mem)
     begin
         if(UNSIGNED(flush_i) /= 0 or UNSIGNED(update_i) /= 0)then
             for i in 0 to num_of_cores-1 loop
@@ -72,7 +78,7 @@ begin
         end if;
     end process;
 
-    process()
+    process(src_cache_i, bus_addr_i)
     begin
         bus_addr_o <= (others => '0');
         for i in 0 to num_of_cores-1 loop
@@ -82,7 +88,7 @@ begin
         end loop;
     end process;
 
-    process()
+    process(send_to_mem_i, data_from_core)
     begin
         data_to_mem <= (others => '0');
         for i in 0 to num_of_cores-1 loop
@@ -91,4 +97,7 @@ begin
             end if;
         end loop;
     end process;
+
+    send_from_mem_o <= '1' when cache_s /= std_logic_vector(to_unsigned(0,num_of_cores)) else
+                       '0';
 end Behavioral;
