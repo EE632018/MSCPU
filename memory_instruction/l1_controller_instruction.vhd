@@ -26,7 +26,7 @@ end l1_controller_instruction;
 architecture Behavioral of l1_controller_instruction is
 
     -- user define types 
-    type tag_array  is array (0 to 2**(index_bits+set_offset_bits) - 1) of std_logic_vector(tag_bits downto 0);
+    type tag_array  is array (0 to 2**(index_bits+set_offset_bits) - 1) of std_logic_vector(tag_bits - 1 downto 0);
     type ptr_array is array (0 to 2**index_bits-1) of std_logic;
     -- fsm state of cache_controller
     type state is (IDLE, COMPARE_TAG, ALLOCATE_REFILL);
@@ -49,7 +49,7 @@ architecture Behavioral of l1_controller_instruction is
     signal wr_req, rd_req                       : std_logic;
     signal mem_addr_r, mem_addr_nxt             : std_logic_vector(tag_bits + index_bits + set_offset_bits - 1 downto 0);
 
-    signal tag_r, tag_nxt                       : std_logic_vector(tag_bits downto 0);
+    signal tag_r, tag_nxt                       : std_logic_vector(tag_bits - 1 downto 0);
     signal index0_r,index0_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
     signal index1_r,index1_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
     signal index2_r,index2_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
@@ -154,7 +154,7 @@ begin
                 hit_nxt     <= '0';
                 miss_nxt    <= '0';
 
-                tag_nxt     <= '0' & tag;
+                tag_nxt     <= tag;
                 index0_nxt  <= index & "00";
                 index1_nxt  <= index & "01";
                 index2_nxt  <= index & "10";
@@ -211,7 +211,7 @@ begin
             when ALLOCATE_REFILL    =>
                 mem_addr_nxt     <= proc_addr;
                 refill_nxt  <= '1';
-                tag_array_nxt(to_integer(unsigned(instruction_loc_r))) <= '0' & tag;
+                tag_array_nxt(to_integer(unsigned(instruction_loc_r))) <= tag;
                 stall     <= '0';
                 state_nxt <= IDLE;
             when others             => 
