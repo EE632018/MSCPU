@@ -10,9 +10,6 @@ entity arbiter is
         block_size      : integer := 128
     );
     port (
-        clk             : in std_logic;
-        reset           : in std_logic;
-
         cache_o         : out std_logic_vector(num_of_cores - 1 downto 0); --
         busrd_o         : out std_logic_vector(num_of_cores - 1 downto 0); --
         busupd_o        : out std_logic_vector(num_of_cores - 1 downto 0); --
@@ -33,15 +30,7 @@ entity arbiter is
         bus_addr_i      : in std_logic_vector(num_of_cores * addr_w - 1 downto 0);
         cache_i         : in std_logic_vector(num_of_cores - 1 downto 0);
         stall_a         : out std_logic_vector(num_of_cores - 1 downto 0);
-        src_cache_i     : in std_logic_vector(num_of_cores - 1 downto 0);
-
-        -- INSTRUCTION BUS 
-        instruction_to_bus      : out std_logic_vector(block_size-1 downto 0);  -- instruction from memory
-        instruction_from_mem    : in std_logic_vector(block_size-1 downto 0);
-        read_from_bus           : in std_logic_vector(num_of_cores - 1 downto 0);
-        mem_addr                : in std_logic_vector(num_of_cores * addr_w - 1 downto 0);
-        refill                  : in std_logic_vector(num_of_cores - 1 downto 0);
-        addr_to_mem             : out std_logic_vector(addr_w - 1 downto 0)
+        src_cache_i     : in std_logic_vector(num_of_cores - 1 downto 0)
     );
 end arbiter;
 
@@ -50,6 +39,7 @@ architecture Behavioral of arbiter is
     signal cache_s : std_logic_vector(num_of_cores - 1 downto 0);
 
 begin
+
 
     process(busrd_i, cache_i, busupd_i, update_i, flush_i)
     begin
@@ -75,10 +65,11 @@ begin
 
     process(flush_i, update_i, data_to_bus, data_from_mem)
     begin
+        data_from_bus <= (others => '0');
         if(UNSIGNED(flush_i) /= 0 or UNSIGNED(update_i) /= 0)then
             for i in 0 to num_of_cores-1 loop
                 if(flush_i(i) = '1')then
-                    data_from_bus <= data_to_bus((i+1) * word_size - 1 downto i * word_size));
+                    data_from_bus <= data_to_bus((i+1) * word_size - 1 downto i * word_size);
                 end if;
             end loop;
         else
@@ -90,8 +81,8 @@ begin
     begin
         bus_addr_o <= (others => '0');
         for i in 0 to num_of_cores-1 loop
-            if(src_cache_i = '1')then
-                bus_addr_o <= bus_addr_i((i+1) * addr_w - 1 downto i * addr_w));
+            if(src_cache_i(i) = '1')then
+                bus_addr_o <= bus_addr_i((i+1) * addr_w - 1 downto i * addr_w);
             end if;
         end loop;
     end process;
@@ -100,8 +91,8 @@ begin
     begin
         data_to_mem <= (others => '0');
         for i in 0 to num_of_cores-1 loop
-            if(send_to_mem_i = '1')then
-                data_to_mem <= data_from_core((i+1) * word_size - 1 downto i * word_size));
+            if(send_to_mem_i(i) = '1')then
+                data_to_mem <= data_from_core((i+1) * word_size - 1 downto i * word_size);
             end if;
         end loop;
     end process;

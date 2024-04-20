@@ -156,7 +156,7 @@ begin
         data_from_proc  => data_from_proc,
         data_to_bus     => data_to_bus_s,
         addr_from_bus   => bus_addr_i,
-        data_to_proc    => data_to_proc_s
+        data_to_proc    => data_to_proc_s,
         data_to_mem     => data_to_mem
     );
 

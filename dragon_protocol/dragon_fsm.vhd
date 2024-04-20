@@ -101,11 +101,11 @@ begin
     process(fsm_r, prrd_i, prrdmiss_i, prwr_i, prwrmiss_i, busrd_i, busupd_i, cache_i)
     begin
 
-        busrd_o     <= '0';
-        busupd_o    <= '0';
-        flush_o     <= '0';
-        update_o    <= '0';
-        send_to_mem <= '0';
+        busrd_o       <= '0';
+        busupd_o      <= '0';
+        flush_o       <= '0';
+        update_o      <= '0';
+        send_to_mem_o <= '0';
         case(fsm_r) is
             when IDLE =>
                 if(prrdmiss_i = '1') then

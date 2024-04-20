@@ -17,7 +17,7 @@ entity l1_controller_instruction is
         tag             : in std_logic_vector(tag_bits - 1 downto 0); -- tag of addr requested 
         instruction_loc : out std_logic_vector(index_bits+set_offset_bits - 1 downto 0); -- location of instruction in cache instruction array
         refill          : out std_logic; -- refill signal to cache
-        read_from_bus   : out std_logic; -- read signal to cache
+        --read_from_bus   : out std_logic; -- read signal to cache
         mem_addr        : out std_logic_vector(tag_bits+index_bits+set_offset_bits-1 downto 0);
         stall           : out std_logic
     );
@@ -206,6 +206,7 @@ begin
                     state_nxt <= IDLE;
                 else
                     read_from_bus_nxt <= '1';
+                    stall             <= '1';  
                     state_nxt        <= ALLOCATE_REFILL;
                 end if;
             when ALLOCATE_REFILL    =>
@@ -220,6 +221,6 @@ begin
 
     instruction_loc         <= instruction_loc_r;
     refill                  <= refill_r;
-    read_from_bus           <= read_from_bus_r;
+    --read_from_bus           <= read_from_bus_r;
     mem_addr                <= mem_addr_r;
 end Behavioral;

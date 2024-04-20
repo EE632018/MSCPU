@@ -6,7 +6,7 @@ entity core is
     generic(
         addr_w          : integer := 10;
         word_size       : integer := 32;
-        block_size      : integer := 128
+        block_size      : integer := 32
     );
     port (
         clk             : in std_logic;
@@ -32,7 +32,8 @@ entity core is
 
         -- CACHE INSTRUCTION 
         instruction_from_bus    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
-        read_from_bus           : out std_logic;
+        --read_from_bus           : out std_logic;
+        --read_from_bus_i         : in std_logic;
         mem_addr                : out std_logic_vector(addr_w - 1 downto 0);
         refill                  : out std_logic;
         stall_a                 : in std_logic; -- arbiter
@@ -74,11 +75,7 @@ architecture Behavioral of core is
         offset_bits     : integer := 2;
         -- default from memory
         addr_w          : integer := 10;
-        word_size       : integer := 32;
-        -- others generics
-        tag_offset      : integer := 9;
-        index_offset    : integer := 3;
-        block_offset    : integer := 1 
+        word_size       : integer := 32
     );
     port(
         clk             : in std_logic;
@@ -122,7 +119,7 @@ architecture Behavioral of core is
         -- default from cache memory
         loc_bits                : integer := 4;
         offset_bits             : integer := 2;
-        block_size              : integer := 128;
+        block_size              : integer := 32;
         -- default from memory
         addr_w                  : integer := 10;
         word_size               : integer := 32
@@ -136,7 +133,7 @@ architecture Behavioral of core is
         refill                  : out std_logic;
         instruction_to_proc     : out std_logic_vector(word_size-1 downto 0); -- instruction to processor
         instruction_from_bus    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
-        read_from_bus           : out std_logic;
+        --read_from_bus           : out std_logic;
         mem_addr                : out std_logic_vector(tag_bits+index_bits+set_offset_bits-1 downto 0);
         stall                   : out std_logic
     );
@@ -198,6 +195,9 @@ begin
     );
 
     inst_instruction_cache: top_instruction_cache
+    generic map(
+        block_size => 32
+    )
     port map(
         clk                   => clk, 
         reset                 => reset, 
@@ -205,7 +205,7 @@ begin
         addr                  => instr_mem_address_s(9 downto 0),
         instruction_to_proc   => instr_mem_read_s,  
         instruction_from_bus  => instruction_from_bus,  
-        read_from_bus         => read_from_bus,  
+        --read_from_bus         => read_from_bus,  
         refill                => refill,
         mem_addr              => mem_addr,  
         stall                 => stall_is                                                   

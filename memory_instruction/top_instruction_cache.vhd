@@ -14,7 +14,7 @@ entity top_instruction_cache is
         -- default from cache memory
         loc_bits                : integer := 4;
         offset_bits             : integer := 2;
-        block_size              : integer := 128;
+        block_size              : integer := 32;
         -- default from memory
         addr_w                  : integer := 10;
         word_size               : integer := 32
@@ -28,7 +28,7 @@ entity top_instruction_cache is
 
         instruction_to_proc     : out std_logic_vector(word_size-1 downto 0); -- instruction to processor
         instruction_from_bus    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
-        read_from_bus           : out std_logic;
+        --read_from_bus           : out std_logic;
         refill                  : out std_logic;
 
         mem_addr                : out std_logic_vector(tag_bits+index_bits+set_offset_bits-1 downto 0);
@@ -43,7 +43,7 @@ architecture Behavioral of top_instruction_cache is
     generic(
         loc_bits        : integer := 4; -- 16 entries
         offset_bits     : integer := 2; -- to choose one of four words
-        block_size      : integer := 128; -- 32*4 
+        block_size      : integer := 32; -- 32*4 
         mem_word_size   : integer := 32; -- word size of memory
         proc_word_size  : integer := 32; -- word size of processor
         blk_0_offset    : integer := 127; -- cache block --> | blk0 | blk1 | blk2 | blk3
@@ -76,7 +76,7 @@ architecture Behavioral of top_instruction_cache is
         tag             : in std_logic_vector(tag_bits - 1 downto 0); -- tag of addr requested 
         instruction_loc : out std_logic_vector(index_bits+set_offset_bits - 1 downto 0); -- location of instruction in cache instruction array
         refill          : out std_logic; -- refill signal to cache
-        read_from_bus   : out std_logic; -- read signal to cache
+        --read_from_bus   : out std_logic; -- read signal to cache
         mem_addr        : out std_logic_vector(tag_bits+index_bits+set_offset_bits-1 downto 0);
         stall           : out std_logic
     );
@@ -88,6 +88,9 @@ architecture Behavioral of top_instruction_cache is
 begin
 
     inst_cache_instruction: cache_instruction
+    GENERIC MAP (
+        block_size => 32
+    )
     port map(
         clk                     => clk,
         refill                  => refill_s,
@@ -107,7 +110,7 @@ begin
         tag             => addr(9 downto 4), 
         instruction_loc => instruction_loc_s,
         refill          => refill_s,
-        read_from_bus   => read_from_bus,
+        --read_from_bus   => read_from_bus,
         mem_addr        => mem_addr,
         stall           => stall
     );

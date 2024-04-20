@@ -1,18 +1,31 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-
+use work.utils_pkg.all;
 
 entity top_ms is
     generic (
-        num_of_cores    : integer := 2;
+        num_of_cores    : integer := 4;
         word_size       : integer := 32;
         addr_w          : integer := 10;
-        block_size      : integer := 128
+        block_size      : integer := 32;
+        size            : integer := 1024
     );
     port(
         clk             : in std_logic;
         reset           : in std_logic;
+        
+        -- mem instruction
+        -- top ports
+        wr_top              : in std_logic;
+        en_top              : in std_logic;
+        addr_top            : in std_logic_vector(log2c(size) - 1 downto 0);
+        instruction_top_o   : out std_logic_vector(block_size - 1 downto 0);
+        instruction_top_i   : in std_logic_vector(block_size - 1 downto 0);
+        -- mem data
+        addr_top_data   : in std_logic_vector(log2c(size) - 1 downto 0);
+        data_top_i      : in std_logic_vector(word_size - 1 downto 0);
+        data_top_o      : out std_logic_vector(word_size - 1 downto 0)  
     );
 
 end top_ms;
@@ -49,7 +62,8 @@ architecture Behavioral of top_ms is
 
         -- CACHE INSTRUCTION 
         instruction_from_bus    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
-        read_from_bus           : out std_logic;
+        --read_from_bus           : out std_logic;
+        --read_from_bus_i         : in std_logic; -- this comes from arbiter
         mem_addr                : out std_logic_vector(addr_w - 1 downto 0);
         refill                  : out std_logic;
         stall_a                 : in std_logic; -- arbiter
@@ -65,9 +79,6 @@ architecture Behavioral of top_ms is
         block_size      : integer := 128
     );
     port (
-        clk             : in std_logic;
-        reset           : in std_logic;
-
         cache_o         : out std_logic_vector(num_of_cores - 1 downto 0); --
         busrd_o         : out std_logic_vector(num_of_cores - 1 downto 0); --
         busupd_o        : out std_logic_vector(num_of_cores - 1 downto 0); --
@@ -88,84 +99,113 @@ architecture Behavioral of top_ms is
         bus_addr_i      : in std_logic_vector(num_of_cores * addr_w - 1 downto 0);
         cache_i         : in std_logic_vector(num_of_cores - 1 downto 0);
         stall_a         : out std_logic_vector(num_of_cores - 1 downto 0);
-        src_cache_i     : in std_logic_vector(num_of_cores - 1 downto 0);
+        src_cache_i     : in std_logic_vector(num_of_cores - 1 downto 0)
+    );
+    end component;
 
-        instruction_to_bus      : out std_logic_vector(block_size-1 downto 0);  -- instruction from memory
+    component arbiter_instruction
+    generic(
+        num_of_cores    : integer := 2;
+        addr_w          : integer := 10;
+        word_size       : integer := 32;
+        block_size      : integer := 128
+    );
+    port (
+        instruction_to_bus      : out std_logic_vector(num_of_cores * block_size-1 downto 0);  -- instruction from memory
         instruction_from_mem    : in std_logic_vector(block_size-1 downto 0);
-        read_from_bus           : in std_logic_vector(num_of_cores - 1 downto 0);
+        --read_from_bus           : out std_logic_vector(num_of_cores - 1 downto 0);
         mem_addr                : in std_logic_vector(num_of_cores * addr_w - 1 downto 0);
         refill                  : in std_logic_vector(num_of_cores - 1 downto 0);
-        addr_to_mem             : out std_logic_vector(addr_w - 1 downto 0)
+        addr_to_mem             : out std_logic_vector(num_of_cores * addr_w - 1 downto 0)
     );
     end component;
 
     component mem_data
-    generic(
+   generic(
         block_size      : integer := 128;
         word_size       : integer := 32;
-        addr_size       : integer := 10
+        addr_size       : integer := 10;
+        size            : integer := 1024
     );
     port(
         clk             : in std_logic;
-        reset           : in std_logic;
+        en              : in std_logic;
         send_from_mem_i : in std_logic; -- read signal
-        addr            : in std_logic_vector(addr_size - 1 downto 0);
+        addr            : in std_logic_vector(log2c(size) - 1 downto 0);
         data_i          : in std_logic_vector(word_size - 1 downto 0);
-        data_o          : out std_logic_vector(word_size - 1 downto 0)    
+        data_o          : out std_logic_vector(word_size - 1 downto 0);
+        
+        -- top ports
+        wr_top          : in std_logic; -- read signal
+        en_top          : in std_logic;
+        addr_top_data   : in std_logic_vector(log2c(size) - 1 downto 0);
+        data_top_i      : in std_logic_vector(word_size - 1 downto 0);
+        data_top_o      : out std_logic_vector(word_size - 1 downto 0)    
     );
     end component;
 
     component mem_instruction
     generic(
-        block_size      : integer := 128;
+        block_size      : integer := 32;
         word_size       : integer := 32;
-        addr_size       : integer := 10
+        addr_size       : integer := 10;
+        size            : integer := 1024
     );
     port(
-        clk             : in std_logic;
-        reset           : in std_logic;
-        addr            : in std_logic_vector(addr_size - 1 downto 0);
-        instruction_o   : out std_logic_vector(block_size - 1 downto 0)    
+        clk                 : in std_logic;
+        wr                  : in std_logic;
+        en                  : in std_logic;
+        addr                : in std_logic_vector(log2c(size) - 1 downto 0);    
+        instruction_o       : out std_logic_vector(block_size - 1 downto 0);
+        instruction_i       : in std_logic_vector(block_size - 1 downto 0);
+        
+        -- top ports
+        wr_top              : in std_logic;
+        en_top              : in std_logic;
+        addr_top            : in std_logic_vector(log2c(size) - 1 downto 0);
+        instruction_top_o   : out std_logic_vector(block_size - 1 downto 0);
+        instruction_top_i   : in std_logic_vector(block_size - 1 downto 0)
+            
     );
     end component;
 
-    signal cache_os         : std_logic_vector(num_of_cores - 1 downto 0); --
-    signal busrd_os         : std_logic_vector(num_of_cores - 1 downto 0); --
-    signal busupd_os        : std_logic_vector(num_of_cores - 1 downto 0); --
-    signal busrd_is         : std_logic_vector(num_of_cores - 1 downto 0); --
-    signal busupd_is        : std_logic_vector(num_of_cores - 1 downto 0); --
-    signal flush_is         : std_logic_vector(num_of_cores - 1 downto 0);
-    signal update_is        : std_logic_vector(num_of_cores - 1 downto 0);
-    signal send_to_mem_is   : std_logic_vector(num_of_cores - 1 downto 0);
-    signal send_from_mem_os : std_logic; -- this is read enable signal, to read some data from main memory to some core
-    signal data_from_bus_s  : std_logic_vector(word_size - 1 downto 0);
-    signal data_from_mem_s  : std_logic_vector(word_size - 1 downto 0);
-    signal data_to_mem_s    : std_logic_vector(word_size - 1 downto 0);
-    signal data_to_bus_s    : std_logic_vector(num_of_cores * word_size - 1 downto 0);
-    signal data_from_core_s : std_logic_vector(num_of_cores * word_size - 1 downto 0); -- ovo je signal iz cora koji se zove data_to_mem
-    signal bus_addr_os      : std_logic_vector(addr_w - 1 downto 0);
-    signal bus_addr_is      : std_logic_vector(num_of_cores * addr_w - 1 downto 0);
-    signal cache_is         : std_logic_vector(num_of_cores - 1 downto 0);
-    signal stall_as         : std_logic_vector(num_of_cores - 1 downto 0);
-    signal src_cache_is     : std_logic_vector(num_of_cores - 1 downto 0);
-    signal instruction_to_bus_s      : std_logic_vector(block_size-1 downto 0);  -- instruction from memory
+    signal cache_os                  : std_logic_vector(num_of_cores - 1 downto 0); --
+    signal busrd_os                  : std_logic_vector(num_of_cores - 1 downto 0); --
+    signal busupd_os                 : std_logic_vector(num_of_cores - 1 downto 0); --
+    signal busrd_is                  : std_logic_vector(num_of_cores - 1 downto 0); --
+    signal busupd_is                 : std_logic_vector(num_of_cores - 1 downto 0); --
+    signal flush_is                  : std_logic_vector(num_of_cores - 1 downto 0);
+    signal update_is                 : std_logic_vector(num_of_cores - 1 downto 0);
+    signal send_to_mem_is            : std_logic_vector(num_of_cores - 1 downto 0);
+    signal send_from_mem_os          : std_logic; -- this is read enable signal, to read some data from main memory to some core
+    signal data_from_bus_s           : std_logic_vector(word_size - 1 downto 0);
+    signal data_from_mem_s           : std_logic_vector(word_size - 1 downto 0);
+    signal data_to_mem_s             : std_logic_vector(word_size - 1 downto 0);
+    signal data_to_bus_s             : std_logic_vector(num_of_cores * word_size - 1 downto 0);
+    signal data_from_core_s          : std_logic_vector(num_of_cores * word_size - 1 downto 0); -- ovo je signal iz cora koji se zove data_to_mem
+    signal bus_addr_os               : std_logic_vector(addr_w - 1 downto 0);
+    signal bus_addr_is               : std_logic_vector(num_of_cores * addr_w - 1 downto 0);
+    signal cache_is                  : std_logic_vector(num_of_cores - 1 downto 0);
+    signal stall_as                  : std_logic_vector(num_of_cores - 1 downto 0);
+    signal src_cache_is              : std_logic_vector(num_of_cores - 1 downto 0);
+    signal instruction_to_bus_s      : std_logic_vector(num_of_cores * block_size-1 downto 0);  -- instruction from memory
     signal instruction_from_mem_s    : std_logic_vector(block_size-1 downto 0);
     signal read_from_bus_s           : std_logic_vector(num_of_cores - 1 downto 0);
     signal mem_addr_s                : std_logic_vector(num_of_cores * addr_w - 1 downto 0);
     signal refill_s                  : std_logic_vector(num_of_cores - 1 downto 0);
-    signal addr_to_mem_s             : std_logic_vector(addr_w - 1 downto 0);
+    signal addr_to_mem_s             : std_logic_vector(num_of_cores * addr_w - 1 downto 0);
+    signal addr_to_mem_ss            : std_logic_vector(addr_w - 1 downto 0);
+   
 begin
 
     inst_arbiter_data: arbiter
     generic map(
-        num_of_cores    => 2,
+        num_of_cores    => num_of_cores,
         addr_w          => 10,
         word_size       => 32,
-        block_size      => 128
+        block_size      => block_size
     )
     port map(
-        clk                     => clk, --
-        reset                   => reset, --
         cache_o                 => cache_os, --
         busrd_o                 => busrd_os, --
         busupd_o                => busupd_os, --
@@ -184,21 +224,30 @@ begin
         bus_addr_i              => bus_addr_is, --
         cache_i                 => cache_is, --
         stall_a                 => stall_as, --
-        src_cache_i             => src_cache_is,--
+        src_cache_i             => src_cache_is
+    );
+
+    inst_arbiter_instruction: arbiter_instruction
+    generic map(
+        num_of_cores    => num_of_cores,
+        addr_w          => 10,
+        word_size       => 32,
+        block_size      => block_size
+    )
+    port map(
         instruction_to_bus      => instruction_to_bus_s,
         instruction_from_mem    => instruction_from_mem_s,
-        read_from_bus           => read_from_bus_s,
         mem_addr                => mem_addr_s,
         refill                  => refill_s, 
         addr_to_mem             => addr_to_mem_s
     );
 
-    for i in 0 to num_of_cores - 1 generate
+    inst_cores: for i in 0 to num_of_cores - 1 generate
         core_inst: core
         generic map(
             addr_w          => 10,
             word_size       => 32,
-            block_size      => 128
+            block_size      => block_size
         )
         port map(
             clk                     => clk,
@@ -214,12 +263,11 @@ begin
             data_from_bus           => data_from_bus_s,
             data_to_bus             => data_to_bus_s((i+1)* word_size - 1 downto i*word_size),
             data_to_mem             => data_from_core_s((i+1)* word_size - 1 downto i*word_size),
-            bus_addr_o              => bus_addr_is(i * addr_w),
+            bus_addr_o              => bus_addr_is((i+1)* addr_w - 1 downto i*addr_w),
             bus_addr_i              => bus_addr_os,
             cache_o                 => cache_is(i),        
-            instruction_from_bus    => instruction_to_bus_s,    
-            read_from_bus           => read_from_bus(i),
-            mem_addr                => mem_addr_s((i+1)* word_size - 1 downto i*word_size),
+            instruction_from_bus    => instruction_to_bus_s((i+1)* block_size - 1 downto i*block_size),    
+            mem_addr                => mem_addr_s((i+1)* addr_w - 1 downto i*addr_w),
             refill                  => refill_s(i),
             stall_a                 => stall_as(i),
             src_cache_o             => src_cache_is(i)
@@ -228,30 +276,53 @@ begin
 
     inst_data_mem: mem_data
     generic map(
-        block_size      => 128,
+        block_size      => block_size,
         word_size       => 32,
         addr_size       => 10
     )
     port map(
         clk             => clk,
-        reset           => reset,
         send_from_mem_i => send_from_mem_os,
+        en              => en_top, 
+        en_top          => en_top,
         addr            => bus_addr_os,
         data_i          => data_to_mem_s,
-        data_o          => data_from_mem_s    
+        data_o          => data_from_mem_s,
+        addr_top_data   => addr_top_data,
+        data_top_i      => data_top_i, 
+        data_top_o      => data_top_o,
+        wr_top          => wr_top   
     );
 
     inst_instruction_mem: mem_instruction
     generic map(
-        block_size      => 128, 
+        block_size      => block_size, 
         word_size       => 32,         
         addr_size       => 10     
     )
     port map(
         clk             => clk,
-        reset           => reset,
-        addr            => addr_to_mem_s,
-        instruction_o   => instruction_from_mem_s    
+        wr              => '1',
+        en              => en_top,
+        en_top          => en_top,
+        addr            => addr_to_mem_ss,
+        instruction_o   => instruction_from_mem_s,
+        instruction_i   => instruction_top_i,
+        wr_top          => wr_top,
+        addr_top        => addr_top,
+        instruction_top_o   => instruction_top_o,
+        instruction_top_i   => instruction_top_i
     );
+  
+
+    process(refill_s, addr_to_mem_s)
+    begin
+        addr_to_mem_ss <= (others => '0');
+        for i in 0 to num_of_cores - 1 loop
+            if (refill_s(i) = '1')then
+                addr_to_mem_ss <= addr_to_mem_s((i+1)* addr_w - 1 downto i*addr_w);
+            end if;
+        end loop;
+    end process;    
 
 end Behavioral;

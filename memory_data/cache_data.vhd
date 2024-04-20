@@ -135,7 +135,7 @@ begin
         end loop;
     end process;
 
-    process(pos0, busrd_os, busupd_os, flush_os, update_os)
+    process(pos0, busrd_os, busupd_os, flush_os, update_os, send_to_mem_os)
     begin
         busrd_o         <= busrd_os(to_integer(unsigned(pos0)));
         busupd_o        <= busupd_os(to_integer(unsigned(pos0)));
