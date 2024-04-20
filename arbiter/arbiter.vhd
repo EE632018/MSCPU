@@ -30,14 +30,15 @@ entity arbiter is
         bus_addr_i      : in std_logic_vector(num_of_cores * addr_w - 1 downto 0);
         cache_i         : in std_logic_vector(num_of_cores - 1 downto 0);
         stall_a         : out std_logic_vector(num_of_cores - 1 downto 0);
-        src_cache_i     : in std_logic_vector(num_of_cores - 1 downto 0)
+        src_cache_i     : in std_logic_vector(num_of_cores - 1 downto 0);
+        en              : out std_logic
     );
 end arbiter;
 
 architecture Behavioral of arbiter is
 
     signal cache_s : std_logic_vector(num_of_cores - 1 downto 0);
-
+    signal en_w, en_r : std_logic;
 begin
 
 
@@ -66,14 +67,17 @@ begin
     process(flush_i, update_i, data_to_bus, data_from_mem)
     begin
         data_from_bus <= (others => '0');
+        en_w            <= '0';
         if(UNSIGNED(flush_i) /= 0 or UNSIGNED(update_i) /= 0)then
             for i in 0 to num_of_cores-1 loop
                 if(flush_i(i) = '1')then
                     data_from_bus <= data_to_bus((i+1) * word_size - 1 downto i * word_size);
+                    en_w  <= '0';
                 end if;
             end loop;
         else
             data_from_bus <= data_from_mem;
+            en_w <= '1';
         end if;
     end process;
 
@@ -90,13 +94,16 @@ begin
     process(send_to_mem_i, data_from_core)
     begin
         data_to_mem <= (others => '0');
+        send_from_mem_o <= '0';
+        en_r            <= '0';            
         for i in 0 to num_of_cores-1 loop
             if(send_to_mem_i(i) = '1')then
                 data_to_mem <= data_from_core((i+1) * word_size - 1 downto i * word_size);
+                send_from_mem_o <= '1';
+                en_r <= '1';
             end if;
         end loop;
     end process;
 
-    send_from_mem_o <= '1' when cache_s /= std_logic_vector(to_unsigned(0,num_of_cores)) else
-                       '0';
+    en <= en_w or en_r;
 end Behavioral;

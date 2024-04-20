@@ -5,7 +5,7 @@ use work.utils_pkg.all;
 
 entity top_ms is
     generic (
-        num_of_cores    : integer := 4;
+        num_of_cores    : integer := 2;
         word_size       : integer := 32;
         addr_w          : integer := 10;
         block_size      : integer := 32;
@@ -99,7 +99,8 @@ architecture Behavioral of top_ms is
         bus_addr_i      : in std_logic_vector(num_of_cores * addr_w - 1 downto 0);
         cache_i         : in std_logic_vector(num_of_cores - 1 downto 0);
         stall_a         : out std_logic_vector(num_of_cores - 1 downto 0);
-        src_cache_i     : in std_logic_vector(num_of_cores - 1 downto 0)
+        src_cache_i     : in std_logic_vector(num_of_cores - 1 downto 0);
+        en              : out std_logic
     );
     end component;
 
@@ -116,7 +117,8 @@ architecture Behavioral of top_ms is
         --read_from_bus           : out std_logic_vector(num_of_cores - 1 downto 0);
         mem_addr                : in std_logic_vector(num_of_cores * addr_w - 1 downto 0);
         refill                  : in std_logic_vector(num_of_cores - 1 downto 0);
-        addr_to_mem             : out std_logic_vector(num_of_cores * addr_w - 1 downto 0)
+        addr_to_mem             : out std_logic_vector(addr_w - 1 downto 0);
+        en                      : out std_logic
     );
     end component;
 
@@ -193,9 +195,10 @@ architecture Behavioral of top_ms is
     signal read_from_bus_s           : std_logic_vector(num_of_cores - 1 downto 0);
     signal mem_addr_s                : std_logic_vector(num_of_cores * addr_w - 1 downto 0);
     signal refill_s                  : std_logic_vector(num_of_cores - 1 downto 0);
-    signal addr_to_mem_s             : std_logic_vector(num_of_cores * addr_w - 1 downto 0);
+    signal addr_to_mem_s             : std_logic_vector(addr_w - 1 downto 0);
     signal addr_to_mem_ss            : std_logic_vector(addr_w - 1 downto 0);
-   
+    signal en_s                      : std_logic;
+    signal en_s_data                 : std_logic;
 begin
 
     inst_arbiter_data: arbiter
@@ -224,7 +227,8 @@ begin
         bus_addr_i              => bus_addr_is, --
         cache_i                 => cache_is, --
         stall_a                 => stall_as, --
-        src_cache_i             => src_cache_is
+        src_cache_i             => src_cache_is,
+        en                      => en_s_data         
     );
 
     inst_arbiter_instruction: arbiter_instruction
@@ -239,7 +243,8 @@ begin
         instruction_from_mem    => instruction_from_mem_s,
         mem_addr                => mem_addr_s,
         refill                  => refill_s, 
-        addr_to_mem             => addr_to_mem_s
+        addr_to_mem             => addr_to_mem_s,
+        en                      => en_s
     );
 
     inst_cores: for i in 0 to num_of_cores - 1 generate
@@ -283,7 +288,7 @@ begin
     port map(
         clk             => clk,
         send_from_mem_i => send_from_mem_os,
-        en              => en_top, 
+        en              => en_s_data, 
         en_top          => en_top,
         addr            => bus_addr_os,
         data_i          => data_to_mem_s,
@@ -302,27 +307,16 @@ begin
     )
     port map(
         clk             => clk,
-        wr              => '1',
-        en              => en_top,
+        wr              => '0',
+        en              => en_s,
         en_top          => en_top,
-        addr            => addr_to_mem_ss,
+        addr            => addr_to_mem_s,
         instruction_o   => instruction_from_mem_s,
         instruction_i   => instruction_top_i,
         wr_top          => wr_top,
         addr_top        => addr_top,
         instruction_top_o   => instruction_top_o,
         instruction_top_i   => instruction_top_i
-    );
-  
-
-    process(refill_s, addr_to_mem_s)
-    begin
-        addr_to_mem_ss <= (others => '0');
-        for i in 0 to num_of_cores - 1 loop
-            if (refill_s(i) = '1')then
-                addr_to_mem_ss <= addr_to_mem_s((i+1)* addr_w - 1 downto i*addr_w);
-            end if;
-        end loop;
-    end process;    
+    );   
 
 end Behavioral;
