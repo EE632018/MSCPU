@@ -21,6 +21,7 @@ entity cache_controller is
         bus_addr_o  : out std_logic_vector(addr_w - 1 downto 0);
         bus_addr_i  : in std_logic_vector(addr_w - 1 downto 0);
         stall       : out std_logic;
+        stall_a     : in std_logic;
 
         -- Signals to cache
         data_loc        : out std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
@@ -96,17 +97,19 @@ begin
             index2_r        <= (others => '0');
             index3_r        <= (others => '0');
         elsif rising_edge(clk) then
-            state_r         <= state_nxt;
-            tag_array_r     <= tag_array_nxt;
-            data_loc_r      <= data_loc_nxt;
-            s_ptr_r         <= s_ptr_nxt;
-            l_ptr_r         <= l_ptr_nxt;
-            r_ptr_r         <= r_ptr_nxt;
-            tag_r           <= tag_nxt;
-            index0_r        <= index0_nxt;
-            index1_r        <= index1_nxt;
-            index2_r        <= index2_nxt;
-            index3_r        <= index3_nxt;
+            if (stall_a = '1') then
+                state_r         <= state_nxt;
+                tag_array_r     <= tag_array_nxt;
+                data_loc_r      <= data_loc_nxt;
+                s_ptr_r         <= s_ptr_nxt;
+                l_ptr_r         <= l_ptr_nxt;
+                r_ptr_r         <= r_ptr_nxt;
+                tag_r           <= tag_nxt;
+                index0_r        <= index0_nxt;
+                index1_r        <= index1_nxt;
+                index2_r        <= index2_nxt;
+                index3_r        <= index3_nxt;
+            end if;
         end if;
     end process;
 

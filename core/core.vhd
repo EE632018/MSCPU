@@ -6,7 +6,8 @@ entity core is
     generic(
         addr_w          : integer := 10;
         word_size       : integer := 32;
-        block_size      : integer := 32
+        block_size      : integer := 32;
+        init_pc_val     : integer := 2
     );
     port (
         clk             : in std_logic;
@@ -44,6 +45,9 @@ end core;
 architecture Behavioral of core is
 
     component TOP_RISCV
+    generic (
+        init_pc_val     : integer := 2
+    );
     port(
       -- Globalna sinhronizacija
       clk                 : in  std_logic;
@@ -102,6 +106,7 @@ architecture Behavioral of core is
         bus_addr_o      : out std_logic_vector(addr_w - 1 downto 0);
         bus_addr_i      : in std_logic_vector(addr_w - 1 downto 0);
         stall           : out std_logic;
+        stall_a         : in std_logic;
         cache_o         : out std_logic;
         src_cache_o     : out std_logic
     );
@@ -135,7 +140,8 @@ architecture Behavioral of core is
         instruction_from_bus    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
         --read_from_bus           : out std_logic;
         mem_addr                : out std_logic_vector(tag_bits+index_bits+set_offset_bits-1 downto 0);
-        stall                   : out std_logic
+        stall                   : out std_logic;
+        stall_a                 : in std_logic
     );
     end component;
 
@@ -152,6 +158,9 @@ architecture Behavioral of core is
 begin
 
     inst_cpu: TOP_RISCV
+    generic map(
+        init_pc_val     => init_pc_val
+    )
     port map(
       clk                 => clk,
       reset               => reset,
@@ -190,6 +199,7 @@ begin
         bus_addr_o      => bus_addr_o,
         bus_addr_i      => bus_addr_i,
         stall           => stall_s,
+        stall_a         => stall_a,
         cache_o         => cache_o,
         src_cache_o     => src_cache_o   
     );
@@ -208,7 +218,8 @@ begin
         --read_from_bus         => read_from_bus,  
         refill                => refill,
         mem_addr              => mem_addr,  
-        stall                 => stall_is                                                   
+        stall                 => stall_is,
+        stall_a               => stall_a                                                   
     );
 
     stall_proc <= stall_s or stall_is or stall_a;

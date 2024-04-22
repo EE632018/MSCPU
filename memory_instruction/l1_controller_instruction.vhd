@@ -19,7 +19,8 @@ entity l1_controller_instruction is
         refill          : out std_logic; -- refill signal to cache
         --read_from_bus   : out std_logic; -- read signal to cache
         mem_addr        : out std_logic_vector(tag_bits+index_bits+set_offset_bits-1 downto 0);
-        stall           : out std_logic
+        stall           : out std_logic;
+        stall_a         : in std_logic
     );
 end l1_controller_instruction;
 
@@ -94,23 +95,25 @@ begin
             refill_r        <= '0';
             mem_addr_r      <= (others => '0');
         elsif rising_edge(clk) then
-            state_r         <= state_nxt;
-            hit_r           <= hit_nxt;
-            miss_r          <= miss_nxt;
-            tag_array_r     <= tag_array_nxt;
-            instruction_loc_r      <= instruction_loc_nxt;
-            s_ptr_r         <= s_ptr_nxt;
-            l_ptr_r         <= l_ptr_nxt;
-            r_ptr_r         <= r_ptr_nxt;
-            tag_r           <= tag_nxt;
-            index0_r        <= index0_nxt;
-            index1_r        <= index1_nxt;
-            index2_r        <= index2_nxt;
-            index3_r        <= index3_nxt;
-
-            read_from_bus_r <= read_from_bus_nxt;
-            refill_r        <= refill_nxt;
-            mem_addr_r      <= mem_addr_nxt;
+            if stall_a = '1' then
+                state_r         <= state_nxt;
+                hit_r           <= hit_nxt;
+                miss_r          <= miss_nxt;
+                tag_array_r     <= tag_array_nxt;
+                instruction_loc_r      <= instruction_loc_nxt;
+                s_ptr_r         <= s_ptr_nxt;
+                l_ptr_r         <= l_ptr_nxt;
+                r_ptr_r         <= r_ptr_nxt;
+                tag_r           <= tag_nxt;
+                index0_r        <= index0_nxt;
+                index1_r        <= index1_nxt;
+                index2_r        <= index2_nxt;
+                index3_r        <= index3_nxt;
+    
+                read_from_bus_r <= read_from_bus_nxt;
+                refill_r        <= refill_nxt;
+                mem_addr_r      <= mem_addr_nxt;
+            end if;
         end if;
     end process;
 

@@ -42,6 +42,7 @@ entity top_data_cache is
         bus_addr_o      : out std_logic_vector(addr_w - 1 downto 0);
         bus_addr_i      : in std_logic_vector(addr_w - 1 downto 0);
         stall           : out std_logic;
+        stall_a         : in std_logic;
         cache_o         : out std_logic;
         src_cache_o     : out std_logic
     );
@@ -69,6 +70,7 @@ architecture Behavioral of top_data_cache is
         busrd_i         : in std_logic;
         busupd_i        : in std_logic;
         busrd_o         : out std_logic;
+        stall_a         : in std_logic;
         busupd_o        : out std_logic;
         flush_o         : out std_logic;
         update_o        : out std_logic;
@@ -111,6 +113,7 @@ architecture Behavioral of top_data_cache is
         prrd_o          : out std_logic;
         prrdmiss_o      : out std_logic;
         prwr_o          : out std_logic;
+        stall_a         : in std_logic;
         prwrmiss_o      : out std_logic;
         src_cache_o     : out std_logic
     );
@@ -148,6 +151,7 @@ begin
         busupd_o        => busupd_s,
         flush_o         => flush_s,
         update_o        => update_s,
+        stall_a         => stall_a,
         send_to_mem_o   => send_to_mem_o,
         data_loc        => data_loc_s,
         data_loc_bus_i  => data_loc_bus_s,
@@ -176,6 +180,7 @@ begin
         bus_addr_o      => bus_addr_s,
         bus_addr_i      => bus_addr_i,
         stall           => stall_s,
+        stall_a         => stall_a,
         data_loc        => data_loc_s,
         data_loc_bus_o  => data_loc_bus_s,
         cache_o         => cache_s, 

@@ -13,6 +13,7 @@ entity dragon_fsm is
         prwrmiss_i      : in std_logic;
         busrd_i         : in std_logic;
         busupd_i        : in std_logic;
+        stall_a         : in std_logic;
         busrd_o         : out std_logic;
         busupd_o        : out std_logic;
         flush_o         : out std_logic;
@@ -34,7 +35,9 @@ begin
         if(reset = '0')then
             fsm_r <= IDLE;  
         elsif(rising_edge(clk)) then
-            fsm_r <= fsm_nxt;
+            if (stall_a = '1') then
+                fsm_r <= fsm_nxt;
+            end if;            
         end if;
     end process;
 

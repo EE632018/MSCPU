@@ -5,6 +5,9 @@ use work.datapath_signals_pkg.all;
 
 
 entity data_path is
+   generic (
+    init_pc_val     : integer := 2
+   );
    port(
       -- sinhronizacioni signali
       clk                 : in  std_logic;
@@ -175,7 +178,7 @@ begin
    begin
       if (rising_edge(clk)) then
          if (reset = '0')then
-            pc_reg_if_s <= (others => '0');
+            pc_reg_if_s <= std_logic_vector(to_unsigned(init_pc_val,32));
          elsif (pc_en_i = '1') then
             pc_reg_if_s <= pc_next_if_s;
          end if;

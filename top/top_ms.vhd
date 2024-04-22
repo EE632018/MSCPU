@@ -36,7 +36,8 @@ architecture Behavioral of top_ms is
     generic(
         addr_w          : integer := 10;
         word_size       : integer := 32;
-        block_size      : integer := 128
+        block_size      : integer := 128;
+        init_pc_val     : integer := 2
     );
     port (
         clk             : in std_logic;
@@ -62,8 +63,6 @@ architecture Behavioral of top_ms is
 
         -- CACHE INSTRUCTION 
         instruction_from_bus    : in std_logic_vector(block_size-1 downto 0);  -- instruction from memory
-        --read_from_bus           : out std_logic;
-        --read_from_bus_i         : in std_logic; -- this comes from arbiter
         mem_addr                : out std_logic_vector(addr_w - 1 downto 0);
         refill                  : out std_logic;
         stall_a                 : in std_logic; -- arbiter
@@ -252,7 +251,8 @@ begin
         generic map(
             addr_w          => 10,
             word_size       => 32,
-            block_size      => block_size
+            block_size      => block_size,
+            init_pc_val     => i
         )
         port map(
             clk                     => clk,
@@ -288,8 +288,8 @@ begin
     port map(
         clk             => clk,
         send_from_mem_i => send_from_mem_os,
-        en              => en_s_data, 
-        en_top          => en_top,
+        en              => '1', 
+        en_top          => '1',
         addr            => bus_addr_os,
         data_i          => data_to_mem_s,
         data_o          => data_from_mem_s,
@@ -308,8 +308,8 @@ begin
     port map(
         clk             => clk,
         wr              => '0',
-        en              => en_s,
-        en_top          => en_top,
+        en              => '1',
+        en_top          => '1',
         addr            => addr_to_mem_s,
         instruction_o   => instruction_from_mem_s,
         instruction_i   => instruction_top_i,

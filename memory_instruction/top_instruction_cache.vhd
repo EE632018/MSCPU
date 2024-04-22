@@ -32,7 +32,8 @@ entity top_instruction_cache is
         refill                  : out std_logic;
 
         mem_addr                : out std_logic_vector(tag_bits+index_bits+set_offset_bits-1 downto 0);
-        stall                   : out std_logic
+        stall                   : out std_logic;
+        stall_a                 : in std_logic
     );
 end top_instruction_cache;
 
@@ -78,7 +79,8 @@ architecture Behavioral of top_instruction_cache is
         refill          : out std_logic; -- refill signal to cache
         --read_from_bus   : out std_logic; -- read signal to cache
         mem_addr        : out std_logic_vector(tag_bits+index_bits+set_offset_bits-1 downto 0);
-        stall           : out std_logic
+        stall           : out std_logic;
+        stall_a         : in std_logic
     );
     end component;
 
@@ -112,7 +114,8 @@ begin
         refill          => refill_s,
         --read_from_bus   => read_from_bus,
         mem_addr        => mem_addr,
-        stall           => stall
+        stall           => stall,
+        stall_a         => stall_a
     );
 
     refill <= refill_s;

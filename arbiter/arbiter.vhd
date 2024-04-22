@@ -47,19 +47,33 @@ begin
         stall_a <= (others => '1');
         busrd_o <= (others => '1');
         for i in 0 to num_of_cores-1 loop
-            if(busrd_i(i) = '1' or cache_i(i) = '1' or busupd_i(i) = '1' or update_i(i) = '1' or flush_i(i) = '1')then
+            if(busrd_i(i) = '1' or busupd_i(i) = '1' or update_i(i) = '1' or flush_i(i) = '1')then
                 stall_a(i) <= '0';
                 busrd_o(i) <= busrd_i(i);
-                cache_s(i) <= cache_i(i);
+                --cache_s(i) <= cache_i(i);
                 busupd_o(i) <= busupd_i(i);
             else
                 stall_a <= (others => '1');
                 busrd_o <= (others => '0');
-                cache_s <= (others => '0');
+                --cache_s <= (others => '0');
                 busupd_o <= (others => '0');
             end if;
         end loop;
     end process;
+
+    process(cache_i)
+    begin
+        
+        for i in 0 to num_of_cores-1 loop
+            if(cache_i(i) = '1')then
+
+                cache_s(i) <= cache_i(i);
+            else
+                cache_s <= (others => '0');
+            end if;
+        end loop;
+    end process;
+
 
     cache_o <= cache_s;
 
@@ -70,7 +84,7 @@ begin
         en_w            <= '0';
         if(UNSIGNED(flush_i) /= 0 or UNSIGNED(update_i) /= 0)then
             for i in 0 to num_of_cores-1 loop
-                if(flush_i(i) = '1')then
+                if(flush_i(i) = '1' or update_i(i) = '1')then
                     data_from_bus <= data_to_bus((i+1) * word_size - 1 downto i * word_size);
                     en_w  <= '0';
                 end if;
@@ -105,5 +119,5 @@ begin
         end loop;
     end process;
 
-    en <= en_w or en_r;
+    en <= en_r;
 end Behavioral;

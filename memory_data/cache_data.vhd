@@ -25,6 +25,7 @@ entity cache_data is
         flush_o         : out std_logic;
         update_o        : out std_logic;
         send_to_mem_o   : out std_logic;
+        stall_a         : in std_logic;
         data_loc        : in std_logic_vector(loc_bits-1 downto 0); -- data_loc selection
         data_loc_bus_i  : in std_logic_vector(loc_bits-1 downto 0);
         offset          : in std_logic_vector(offset_bits-1 downto 0); -- offset selection
@@ -54,6 +55,7 @@ port(
     prwrmiss_i      : in std_logic;
     busrd_i         : in std_logic;
     busupd_i        : in std_logic;
+    stall_a         : in std_logic;
     busrd_o         : out std_logic;
     busupd_o        : out std_logic;
     flush_o         : out std_logic;
@@ -93,6 +95,7 @@ begin
             port map(
                 clk             => clk,
                 reset           => reset,
+                stall_a         => stall_a,
                 cache_i         => cache_is(i),
                 prrd_i          => prrd_is(i),
                 prrdmiss_i      => prrdmiss_is(i),

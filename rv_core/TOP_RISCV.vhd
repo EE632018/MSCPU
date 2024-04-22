@@ -3,6 +3,9 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity TOP_RISCV is
+   generic (
+        init_pc_val     : integer := 2
+   );
    port(
       -- Globalna sinhronizacija
       clk                 : in  std_logic;
@@ -49,6 +52,9 @@ architecture structural of TOP_RISCV is
 begin
    -- Instanca datapath-a
    data_path_1: entity work.data_path
+      generic map (
+      init_pc_val     => init_pc_val 
+      )
       port map (
          -- sinhronizacija
          clk                 => clk,
