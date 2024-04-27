@@ -4,7 +4,7 @@ use IEEE.NUMERIC_STD.all;
 
 entity cache_data is
     generic(
-        loc_bits        : integer := 4; -- 16 entries
+        loc_bits        : integer := 6; -- 64 entries
         offset_bits     : integer := 2; -- to choose one of four words
         word_size       : integer := 32; -- word size 
         addr_w          : integer := 10
@@ -28,12 +28,11 @@ entity cache_data is
         stall_a         : in std_logic;
         data_loc        : in std_logic_vector(loc_bits-1 downto 0); -- data_loc selection
         data_loc_bus_i  : in std_logic_vector(loc_bits-1 downto 0);
-        offset          : in std_logic_vector(offset_bits-1 downto 0); -- offset selection
-        
+       
         data_from_bus   : in std_logic_vector(word_size - 1 downto 0);  -- data from memory
         data_from_proc  : in std_logic_vector(word_size - 1 downto 0); -- data from processor
         data_to_bus     : out std_logic_vector(word_size - 1 downto 0); -- evicted block data in case of a write miss
-        addr_from_bus   : in std_logic_vector(addr_w - 1 downto 0);
+        
         data_to_proc    : out std_logic_vector(word_size - 1 downto 0); -- data to processor
         data_to_mem     : out std_logic_vector(word_size - 1 downto 0)
         
@@ -42,7 +41,7 @@ end cache_data;
 
 architecture Behavioral of cache_data is 
 
-type ram is array (0 to 2**(loc_bits+offset_bits) - 1) of std_logic_vector(word_size-1 downto 0);
+type ram is array (0 to 2**(loc_bits) - 1) of std_logic_vector(word_size-1 downto 0);
 
 component dragon_fsm 
 port(
@@ -64,7 +63,7 @@ port(
 );
 end component;
 
-type cache_cnt is array (0 to 2**(loc_bits+offset_bits) - 1) of std_logic;
+type cache_cnt is array (0 to 2**(loc_bits) - 1) of std_logic;
 
 signal cache_is         : cache_cnt; 
 signal prrd_is          : cache_cnt;
@@ -81,16 +80,12 @@ signal send_to_mem_os   : cache_cnt;
 
 signal cache : ram := (others => (others => '0'));
 
-signal pos0 : std_logic_vector(loc_bits+offset_bits-1 downto 0); -- postion 0
-signal pos0_bus : std_logic_vector(loc_bits+offset_bits-1 downto 0);
-signal pos1 : std_logic_vector(loc_bits+offset_bits-1 downto 0); -- postion 1
-signal pos2 : std_logic_vector(loc_bits+offset_bits-1 downto 0); -- postion 2
-signal pos3 : std_logic_vector(loc_bits+offset_bits-1 downto 0); -- postion 3
-signal pos4 : std_logic_vector(loc_bits+offset_bits-1 downto 0); -- postion 4
+signal pos0 : std_logic_vector(loc_bits-1 downto 0); -- postion 0
+signal pos0_bus : std_logic_vector(loc_bits-1 downto 0);
 
 begin
 
-    dragon_fsm_inst: for i in 0 to 2**(loc_bits+offset_bits) - 1 generate
+    dragon_fsm_inst: for i in 0 to 2**(loc_bits) - 1 generate
         dragon_fsm_i : dragon_fsm
             port map(
                 clk             => clk,
@@ -111,10 +106,10 @@ begin
             );
     end generate;
     
-    pos0        <= data_loc & offset;
-    pos0_bus    <= data_loc_bus_i & addr_from_bus(1 downto 0);
+    pos0        <= data_loc;
+    pos0_bus    <= data_loc_bus_i;
 
-    process(data_loc, offset, cache_i, prrd_i, prrdmiss_i,prwr_i, prwrmiss_i,busrd_i, busupd_i, pos0)
+    process(data_loc, cache_i, prrd_i, prrdmiss_i,prwr_i, prwrmiss_i,busrd_i, busupd_i, pos0)
     begin
         for i in 0 to 63
         loop

@@ -4,9 +4,9 @@ use ieee.numeric_std.all;
 
 entity cache_controller is
     generic(
-        index_bits      : integer := 2;
-        set_offset_bits : integer := 2;
-        tag_bits        : integer := 6;
+        index_bits      : integer := 4; -- bits used for sets, I have 64 enteries in cache separeted in 4 way, so 16 sets
+        set_offset_bits : integer := 2; -- Each of sets has 4 lines that covers 16*4=64
+        tag_bits        : integer := 6; -- Address is 10 bits so tag is 10 - 4 = 6
         addr_w          : integer := 10
     );
 
@@ -44,7 +44,7 @@ architecture Behavioral of cache_controller is
     type state is (IDLE, COMPARE_TAG);
     signal state_r, state_nxt                   : state     := IDLE;
 
-    signal tag_array_r, tag_array_nxt           : tag_array := (others => (others => '0'));
+    signal tag_array_r, tag_array_nxt           : tag_array := (others => (others => '1'));
     -- base pointer for each set
     signal s_ptr_r, s_ptr_nxt                   : ptr_array := (others => '0');
     -- left pointer for each set
@@ -54,29 +54,29 @@ architecture Behavioral of cache_controller is
 
     signal tag_s, tag_r, tag_nxt                : std_logic_vector(tag_bits - 1 downto 0);
     signal index0_r,index0_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
-    signal index_s                              : std_logic_vector(1 downto 0);
+    signal index_s                              : std_logic_vector(index_bits - 1 downto 0);
     signal index1_r,index1_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
     signal index2_r,index2_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
     signal index3_r,index3_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0); 
     signal data_loc_bus_s, data_loc_r, data_loc_nxt : std_logic_vector(index_bits+set_offset_bits-1 downto 0);
 
     signal tag_s_bus, tag_bus                   : std_logic_vector(tag_bits - 1 downto 0);
-    signal index_s_bus                          : std_logic_vector(1 downto 0);
+    signal index_s_bus                          : std_logic_vector(index_bits - 1 downto 0);
     signal index0_bus                           : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
     signal index1_bus                           : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
     signal index2_bus                           : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
     signal index3_bus                           : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
 
-    signal prrd_s          : std_logic;
-    signal prrdmiss_s      : std_logic;
-    signal prwr_s          : std_logic;
-    signal prwrmiss_s      : std_logic;
+    signal prrd_s                               : std_logic;
+    signal prrdmiss_s                           : std_logic;
+    signal prwr_s                               : std_logic;
+    signal prwrmiss_s                           : std_logic;
 begin
 
     tag_s       <= proc_addr(9 downto 4);
-    index_s     <= proc_addr(3 downto 2);
+    index_s     <= proc_addr(3 downto 0);
     tag_s_bus   <= bus_addr_i(9 downto 4);
-    index_s_bus <= bus_addr_i(3 downto 2);
+    index_s_bus <= bus_addr_i(3 downto 0);
     bus_addr_o  <= proc_addr; 
 
 
@@ -86,7 +86,7 @@ begin
     begin
         if reset = '0' then
             state_r         <= IDLE;
-            tag_array_r     <= (others => (others => '0'));
+            tag_array_r     <= (others => (others => '1'));
             data_loc_r      <= (others => '0');
             s_ptr_r         <= (others => '0');
             l_ptr_r         <= (others => '0');
@@ -260,7 +260,7 @@ begin
                  data_loc_bus_s <= index3_bus;
         else
             cache_o <= '0';
-            data_loc_bus_s <= "0000";                          
+            data_loc_bus_s <= "000000";                          
         end if;
     end process;
 
