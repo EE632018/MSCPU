@@ -121,7 +121,7 @@ begin
                 end if;
             when E =>
             when Sc =>
-                if(prwr_i = '1') then
+                if(prwr_i = '1' and cache_i = '1') then
                     busupd_o   <= '1';
                 elsif (busupd_i = '1') then
                     update_o   <= '1';
