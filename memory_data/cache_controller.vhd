@@ -71,6 +71,8 @@ architecture Behavioral of cache_controller is
     signal prrdmiss_s                           : std_logic;
     signal prwr_s                               : std_logic;
     signal prwrmiss_s                           : std_logic;
+    signal proc_rd_r, proc_rd_nxt               : std_logic;
+    signal proc_wr_r, proc_wr_nxt               : std_logic;
 begin
 
     tag_s       <= proc_addr(9 downto 4);
@@ -96,6 +98,8 @@ begin
             index1_r        <= (others => '0');
             index2_r        <= (others => '0');
             index3_r        <= (others => '0');
+            proc_rd_r       <= '0';
+            proc_wr_r       <= '0';
         elsif rising_edge(clk) then
             if (stall_a = '1') then
                 state_r         <= state_nxt;
@@ -109,6 +113,8 @@ begin
                 index1_r        <= index1_nxt;
                 index2_r        <= index2_nxt;
                 index3_r        <= index3_nxt;
+                proc_rd_r       <= proc_rd_nxt;
+                proc_wr_r       <= proc_wr_nxt;
             end if;
         end if;
     end process;
@@ -130,6 +136,8 @@ begin
         index2_nxt        <= index2_r;
         index3_nxt        <= index3_r;
 
+        proc_rd_nxt       <= proc_rd_r;
+        proc_wr_nxt       <= proc_wr_r;
         prrd_s            <= '0';
         prrdmiss_s        <= '0';
         prwr_s            <= '0';
@@ -144,8 +152,10 @@ begin
                 index1_nxt  <= index_s & "01";
                 index2_nxt  <= index_s & "10";
                 index3_nxt  <= index_s & "11";
+                proc_rd_nxt <= proc_rd;
+                proc_wr_nxt <= proc_wr;
 
-                if proc_rd = '1' or proc_wr = '1' then
+                if proc_rd_nxt = '1' or proc_wr_nxt = '1' then
                     stall <= '1';
                     state_nxt <= COMPARE_TAG;
                 end if;
@@ -153,9 +163,9 @@ begin
                 if ((tag_r(tag_bits-1 downto 0) xor 
                     tag_array_r(to_integer(unsigned(index0_r)))(tag_bits-1 downto 0)) = "000000") then
                         data_loc_nxt <= index0_r;
-                        if proc_rd = '1' then
+                        if proc_rd_r = '1' then
                             prrd_s <= '1';
-                        elsif proc_wr = '1' then
+                        elsif proc_wr_r = '1' then
                             prwr_s <= '1';
                         end if;
                     if data_loc_nxt(1) = '1' then
@@ -168,9 +178,9 @@ begin
                 elsif ((tag_r(tag_bits-1 downto 0) xor 
                     tag_array_r(to_integer(unsigned(index1_r)))(tag_bits-1 downto 0)) = "000000") then
                     data_loc_nxt <= index1_r;
-                    if proc_rd = '1' then
+                    if proc_rd_r = '1' then
                         prrd_s <= '1';
-                    elsif proc_wr = '1' then
+                    elsif proc_wr_r = '1' then
                         prwr_s <= '1';
                     end if;
                     if data_loc_nxt(1) = '1' then
@@ -183,9 +193,9 @@ begin
                 elsif ((tag_r(tag_bits-1 downto 0) xor 
                     tag_array_r(to_integer(unsigned(index2_r)))(tag_bits-1 downto 0)) = "000000") then
                     data_loc_nxt <= index2_r;
-                    if proc_rd = '1' then
+                    if proc_rd_r = '1' then
                         prrd_s <= '1';
-                    elsif proc_wr = '1' then
+                    elsif proc_wr_r = '1' then
                         prwr_s <= '1';
                     end if;
                     if data_loc_nxt(1) = '1' then
@@ -198,9 +208,9 @@ begin
                 elsif ((tag_r(tag_bits-1 downto 0) xor 
                     tag_array_r(to_integer(unsigned(index3_r)))(tag_bits-1 downto 0)) = "000000") then
                     data_loc_nxt <= index3_r;
-                    if proc_rd = '1' then
+                    if proc_rd_r = '1' then
                         prrd_s <= '1';
-                    elsif proc_wr = '1' then
+                    elsif proc_wr_r = '1' then
                         prwr_s <= '1';
                     end if;   
                     if data_loc_nxt(1) = '1' then
@@ -211,9 +221,9 @@ begin
                         l_ptr_nxt(to_integer(unsigned(index_s))) <= data_loc_nxt(0);
                     end if;
                 else
-                    if proc_rd = '1' then
+                    if proc_rd_r = '1' then
                         prrdmiss_s <= '1';
-                    elsif proc_wr = '1' then
+                    elsif proc_wr_r = '1' then
                         prwrmiss_s <= '1';
                     end if;
                     if s_ptr_r(to_integer(unsigned(index_s))) = '0' then
