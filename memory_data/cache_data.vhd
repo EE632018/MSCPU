@@ -111,7 +111,7 @@ begin
 
     process(data_loc, cache_i, prrd_i, prrdmiss_i,prwr_i, prwrmiss_i,busrd_i, busupd_i, pos0)
     begin
-        for i in 0 to 63
+        for i in 0 to 2**(loc_bits) - 1
         loop
                 if(i = to_integer(unsigned(pos0))) then
                     cache_is(i)         <= cache_i;

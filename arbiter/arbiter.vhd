@@ -36,7 +36,6 @@ entity arbiter is
 end arbiter;
 
 architecture Behavioral of arbiter is
-
     signal cache_s : std_logic_vector(num_of_cores - 1 downto 0);
     signal en_w, en_r : std_logic;
 begin
@@ -66,7 +65,6 @@ begin
         
         for i in 0 to num_of_cores-1 loop
             if(cache_i(i) = '1')then
-
                 cache_s(i) <= cache_i(i);
             else
                 cache_s <= (others => '0');
@@ -74,9 +72,7 @@ begin
         end loop;
     end process;
 
-
     cache_o <= cache_s;
-
 
     process(flush_i, update_i, data_to_bus, data_from_mem)
     begin

@@ -24,8 +24,8 @@ entity cache_controller is
         stall_a     : in std_logic;
 
         -- Signals to cache
-        data_loc        : out std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
-        data_loc_bus_o  : out std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
+        data_loc        : out std_logic_vector(5 downto 0);
+        data_loc_bus_o  : out std_logic_vector(5 downto 0);
         cache_o         : out std_logic; -- there is this value in other cache
         prrd_o          : out std_logic;
         prrdmiss_o      : out std_logic;
@@ -53,19 +53,19 @@ architecture Behavioral of cache_controller is
     signal r_ptr_r, r_ptr_nxt                   : ptr_array := (others => '0');
 
     signal tag_s, tag_r, tag_nxt                : std_logic_vector(tag_bits - 1 downto 0);
-    signal index0_r,index0_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
-    signal index_s                              : std_logic_vector(index_bits - 1 downto 0);
-    signal index1_r,index1_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
-    signal index2_r,index2_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
-    signal index3_r,index3_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0); 
-    signal data_loc_bus_s, data_loc_r, data_loc_nxt : std_logic_vector(index_bits+set_offset_bits-1 downto 0);
+    signal index0_r,index0_nxt                  : std_logic_vector(5 downto 0);
+    signal index_s                              : std_logic_vector(3 downto 0);
+    signal index1_r,index1_nxt                  : std_logic_vector(5 downto 0);
+    signal index2_r,index2_nxt                  : std_logic_vector(5 downto 0);
+    signal index3_r,index3_nxt                  : std_logic_vector(5 downto 0); 
+    signal data_loc_bus_s, data_loc_r, data_loc_nxt : std_logic_vector(5 downto 0);
 
     signal tag_s_bus, tag_bus                   : std_logic_vector(tag_bits - 1 downto 0);
-    signal index_s_bus                          : std_logic_vector(index_bits - 1 downto 0);
-    signal index0_bus                           : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
-    signal index1_bus                           : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
-    signal index2_bus                           : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
-    signal index3_bus                           : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
+    signal index_s_bus                          : std_logic_vector(3 downto 0);
+    signal index0_bus                           : std_logic_vector(5 downto 0);
+    signal index1_bus                           : std_logic_vector(5 downto 0);
+    signal index2_bus                           : std_logic_vector(5 downto 0);
+    signal index3_bus                           : std_logic_vector(5 downto 0);
 
     signal prrd_s                               : std_logic;
     signal prrdmiss_s                           : std_logic;

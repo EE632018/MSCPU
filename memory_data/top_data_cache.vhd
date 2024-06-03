@@ -8,7 +8,7 @@ entity top_data_cache is
         data_bus_w      : integer := 32;
         addr_bus_w      : integer := 32;
         -- default from cache controller
-        index_bits      : integer := 2;
+        index_bits      : integer := 4;
         tag_bits        : integer := 6;
         set_offset_bits : integer := 2;
         -- default from cache memory
@@ -53,7 +53,7 @@ architecture Behavioral of top_data_cache is
 
     component cache_data
     generic(
-        loc_bits        : integer := 4; -- 16 entries
+        loc_bits        : integer := 6; -- 16 entries
         offset_bits     : integer := 2; -- to choose one of four words
         word_size       : integer := 32; -- word size 
         addr_w          : integer := 10
@@ -77,12 +77,12 @@ architecture Behavioral of top_data_cache is
         send_to_mem_o   : out std_logic;
         data_loc        : in std_logic_vector(loc_bits-1 downto 0); -- data_loc selection
         data_loc_bus_i  : in std_logic_vector(loc_bits-1 downto 0);
-        offset          : in std_logic_vector(offset_bits-1 downto 0); -- offset selection
+        --offset          : in std_logic_vector(offset_bits-1 downto 0); -- offset selection
         
         data_from_bus   : in std_logic_vector(word_size - 1 downto 0);  -- data from memory
         data_from_proc  : in std_logic_vector(word_size - 1 downto 0); -- data from processor
         data_to_bus     : out std_logic_vector(word_size - 1 downto 0); -- evicted block data in case of a write miss
-        addr_from_bus   : in std_logic_vector(addr_w - 1 downto 0);
+        --addr_from_bus   : in std_logic_vector(addr_w - 1 downto 0);
         data_to_proc    : out std_logic_vector(word_size - 1 downto 0); -- data to processor
         data_to_mem     : out std_logic_vector(word_size - 1 downto 0) 
     );
@@ -90,7 +90,7 @@ architecture Behavioral of top_data_cache is
 
     component cache_controller
     generic(
-        index_bits      : integer := 2;
+        index_bits      : integer := 4;
         set_offset_bits : integer := 2;
         tag_bits        : integer := 6;
         addr_w          : integer := 10
@@ -107,8 +107,8 @@ architecture Behavioral of top_data_cache is
         bus_addr_i  : in std_logic_vector(addr_w - 1 downto 0);
         stall       : out std_logic;
         -- Signals to cache
-        data_loc        : out std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
-        data_loc_bus_o  : out std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
+        data_loc        : out std_logic_vector(5 downto 0);
+        data_loc_bus_o  : out std_logic_vector(5 downto 0);
         cache_o         : out std_logic; -- there is this value in other cache
         prrd_o          : out std_logic;
         prrdmiss_o      : out std_logic;
@@ -123,8 +123,8 @@ architecture Behavioral of top_data_cache is
     signal prwr_s, prwrmiss_s : std_logic;
     signal busrd_s, busupd_s, flush_s, update_s : std_logic; 
     signal stall_s, cache_s : std_logic;
-    signal data_loc_s         : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
-    signal data_loc_bus_s     : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
+    signal data_loc_s         : std_logic_vector(5 downto 0);
+    signal data_loc_bus_s     : std_logic_vector(5 downto 0);
     signal data_to_bus_s     : std_logic_vector(word_size - 1 downto 0); -- evicted block data in case of a write miss
     signal data_to_proc_s    : std_logic_vector(word_size - 1 downto 0);
     signal bus_addr_s      : std_logic_vector(addr_w - 1 downto 0);    
@@ -132,7 +132,7 @@ begin
 
     inst_cache_data: cache_data
     generic map(
-        loc_bits        => loc_bits, -- 16 entries
+        loc_bits        => 6, -- 16 entries
         offset_bits     => offset_bits, -- to choose one of four words
         word_size       => word_size, -- word size 
         addr_w          => addr_w
@@ -155,11 +155,11 @@ begin
         send_to_mem_o   => send_to_mem_o,
         data_loc        => data_loc_s,
         data_loc_bus_i  => data_loc_bus_s,
-        offset          => proc_addr(1 downto 0),
+        --offset          => proc_addr(1 downto 0),
         data_from_bus   => data_from_bus,
         data_from_proc  => data_from_proc,
         data_to_bus     => data_to_bus_s,
-        addr_from_bus   => bus_addr_i,
+        --addr_from_bus   => bus_addr_i,
         data_to_proc    => data_to_proc_s,
         data_to_mem     => data_to_mem
     );

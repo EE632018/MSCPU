@@ -142,8 +142,8 @@ begin
         proc_addr_s <= std_logic_vector(to_unsigned(635,10));
         bus_addr_is <= std_logic_vector(to_unsigned(553,10));
         stall_as    <= '1';
-                wait until rising_edge(clk_s);
-                wait until rising_edge(clk_s);
+        wait until rising_edge(clk_s);
+        wait until rising_edge(clk_s);
         reset_s     <= '1';
         proc_rd_s   <= '1';
         proc_wr_s   <= '0';
@@ -158,8 +158,8 @@ begin
         proc_addr_s <= std_logic_vector(to_unsigned(554,10));
         bus_addr_is <= std_logic_vector(to_unsigned(553,10));
         stall_as    <= '1';
-                wait until rising_edge(clk_s);
-                wait until rising_edge(clk_s);
+        wait until rising_edge(clk_s);
+        wait until rising_edge(clk_s);
         reset_s     <= '1';
         proc_rd_s   <= '1';
         proc_wr_s   <= '0';
@@ -174,8 +174,8 @@ begin
         proc_addr_s <= std_logic_vector(to_unsigned(552,10));
         bus_addr_is <= std_logic_vector(to_unsigned(553,10));
         stall_as    <= '1';
-                wait until rising_edge(clk_s);
-                wait until rising_edge(clk_s);
+        wait until rising_edge(clk_s);
+        wait until rising_edge(clk_s);
         reset_s     <= '1';
         proc_rd_s   <= '1';
         proc_wr_s   <= '0';
