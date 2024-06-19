@@ -155,6 +155,7 @@ architecture Behavioral of core is
     signal stall_s              : std_logic;
     signal stall_is             : std_logic;
     signal stall_proc           : std_logic;
+    signal stall_proc_inv       : std_logic;
 begin
 
     inst_cpu: TOP_RISCV
@@ -171,7 +172,7 @@ begin
       data_mem_write_o    => data_mem_write_s,
       data_mem_we_o       => data_mem_we_s,
       data_mem_rd_o       => data_mem_rd_s,
-      stall_i             => stall_proc
+      stall_i             => stall_proc_inv
     );
 
     inst_cache: top_data_cache
@@ -224,4 +225,5 @@ begin
 
     stall_proc <= stall_s or stall_is or stall_a;
     
+    stall_proc_inv <= not(stall_proc);
 end Behavioral;

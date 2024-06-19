@@ -11,12 +11,13 @@ end entity;
 
 architecture Behavioral of TOP_RISCV_tb is
    -- Operand za pristup asemblerskom kodu programa
-   file RISCV_instructions: text open read_mode is "C:\RV32IM\RISCV_tb\test_source_codes\for_bin.txt";
+   file RISCV_instructions: text open read_mode is "C:\MSCPU\rv_core\RISCV_tb\test_source_codes\for_bin.txt";
    --file RISCV_instructions: text open read_mode is "/home/dejan/RV32IM/RISCV_tb/test_source_codes/R_B_U_J_I_bin.txt";   
    
    -- Globalni signali
    signal clk: std_logic:='0';
-   signal reset: std_logic;       
+   signal reset: std_logic;    
+   signal stall_s: std_logic;   
    -- Signali memorije za instrukcije
    signal ena_instr_s,enb_instr_s: std_logic;
    signal wea_instr_s,web_instr_s: std_logic_vector(3 downto 0);
@@ -100,7 +101,8 @@ begin
          data_mem_we_o          => wea_data_s,
          data_mem_address_o     => addra_data_32_s,
          data_mem_read_i        => douta_data_s,
-         data_mem_write_o       => dina_data_s);
+         data_mem_write_o       => dina_data_s,
+         stall_i                => stall_s);
    
    -- Inicijalizacija memorije za instrukcije
    -- Program koji ce procesor izvrsavati se ucitava u memoriju
@@ -109,6 +111,7 @@ begin
       variable i: integer:= 0;
    begin
       reset <= '0';
+      stall_s <= '1';
       --reset <= '1' after 180 ns;
       wea_instr_s <= (others => '1');
       while (not endfile(RISCV_instructions))loop         

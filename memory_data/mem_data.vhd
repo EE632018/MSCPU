@@ -2,6 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.utils_pkg.all;
+
 entity mem_data is 
     generic(
         block_size      : integer := 128;

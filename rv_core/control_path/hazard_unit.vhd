@@ -45,10 +45,10 @@ begin
          if(((rs1_address_id_i = rd_address_ex_i and rs1_in_use_i = '1') or
             (rs2_address_id_i = rd_address_ex_i and rs2_in_use_i = '1')) and
             mem_to_reg_ex_i = "01" and rd_we_ex_i = '1')then -- load instrukcija je u EX fazi
-            en_s <='0';
-         elsif(stall_i = '0') then
-            en_s <='0';   
+            en_s <='0';  
          end if;
+      elsif(stall_i = '0') then
+         en_s <='0'; 
       elsif(branch_id_i = '1')then -- instrukcija u ID fazi je uslovni skok (branch)
          if((rs1_address_id_i = rd_address_ex_i or rs2_address_id_i = rd_address_ex_i)
             and rd_we_ex_i = '1')then -- load ili R-tip u EX fazi
