@@ -17,10 +17,10 @@ entity l1_controller_instruction is
         tag             : in std_logic_vector(tag_bits - 1 downto 0); -- tag of addr requested 
         instruction_loc : out std_logic_vector(index_bits+set_offset_bits - 1 downto 0); -- location of instruction in cache instruction array
         refill          : out std_logic; -- refill signal to cache
-        --read_from_bus   : out std_logic; -- read signal to cache
+        read_from_bus   : out std_logic; -- read signal to cache
         mem_addr        : out std_logic_vector(tag_bits+index_bits+set_offset_bits-1 downto 0);
-        stall           : out std_logic;
-        stall_a         : in std_logic
+        stall           : out std_logic
+        --stall_a         : in std_logic
     );
 end l1_controller_instruction;
 
@@ -55,6 +55,8 @@ architecture Behavioral of l1_controller_instruction is
     signal index1_r,index1_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
     signal index2_r,index2_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0);
     signal index3_r,index3_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0); 
+
+    signal proc_addr_r, proc_addr_nxt           : std_logic_vector(tag_bits+index_bits+set_offset_bits-1 downto 0);
 
 begin
 
@@ -94,8 +96,9 @@ begin
             read_from_bus_r <= '0';
             refill_r        <= '0';
             mem_addr_r      <= (others => '0');
+            proc_addr_r     <= (others => '0');
         elsif rising_edge(clk) then
-            if stall_a = '1' then
+            --if stall_a = '1' then
                 state_r         <= state_nxt;
                 hit_r           <= hit_nxt;
                 miss_r          <= miss_nxt;
@@ -113,7 +116,8 @@ begin
                 read_from_bus_r <= read_from_bus_nxt;
                 refill_r        <= refill_nxt;
                 mem_addr_r      <= mem_addr_nxt;
-            end if;
+                proc_addr_r     <= proc_addr_nxt;
+            --end if;
         end if;
     end process;
 
@@ -123,7 +127,7 @@ begin
             tag_array_nxt, read_from_bus_r, read_from_bus_nxt, tag_r,
             tag_nxt, index0_r, index1_r, index2_r, index3_r, tag, rd,
             hit_nxt, refill_r, update_r, index, mem_addr_r,
-            mem_addr_nxt, hit_r, miss_r)
+            mem_addr_nxt, hit_r, miss_r, proc_addr_r)
     begin
         state_nxt         <= state_r;
         hit_nxt           <= hit_r;
@@ -142,6 +146,7 @@ begin
         read_from_bus_nxt <= '0';
         refill_nxt        <= '0';
         mem_addr_nxt      <= mem_addr_r;
+        proc_addr_nxt     <= proc_addr_r;  
         stall             <= '0';  
 
 -- Case state explanation
@@ -165,6 +170,7 @@ begin
                 if rd = '1' then
                     stall <= '1';
                     state_nxt <= COMPARE_TAG;
+                    proc_addr_nxt   <= proc_addr;
                 end if;
             when COMPARE_TAG        =>
                 if ((tag_r(tag_bits-1 downto 0) xor 
@@ -208,12 +214,12 @@ begin
                     stall <= '0';
                     state_nxt <= IDLE;
                 else
-                    read_from_bus_nxt <= '1';
-                    stall             <= '1';  
-                    state_nxt        <= ALLOCATE_REFILL;
+                    read_from_bus_nxt   <= '1';
+                    mem_addr_nxt        <= proc_addr_r;
+                    stall               <= '1';  
+                    state_nxt           <= ALLOCATE_REFILL;
                 end if;
-            when ALLOCATE_REFILL    =>
-                mem_addr_nxt     <= proc_addr;
+            when ALLOCATE_REFILL    =>                
                 refill_nxt  <= '1';
                 tag_array_nxt(to_integer(unsigned(instruction_loc_r))) <= tag;
                 stall     <= '0';
@@ -224,6 +230,6 @@ begin
 
     instruction_loc         <= instruction_loc_r;
     refill                  <= refill_r;
-    --read_from_bus           <= read_from_bus_r;
+    read_from_bus           <= read_from_bus_r;
     mem_addr                <= mem_addr_r;
 end Behavioral;

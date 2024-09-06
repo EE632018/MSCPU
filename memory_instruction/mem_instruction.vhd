@@ -69,45 +69,4 @@ begin
     end if;
 end process;
 
-
---process(clk, reset)
---begin
---    if reset = '0' then
---        state_r     <= IDLE;
---        cnt_delay_r <= (others => '0');
---    elsif rising_edge(clk) then
---        state_r     <= state_nxt;
---        cnt_delay_r <= cnt_delay_nxt;
---    end if;
---end process;
-
---process(state_r, state_nxt, read_from_mem, cnt_delay_r)
---begin
---    cnt_delay_nxt   <= cnt_delay_r;
---    state_nxt       <= state_r;
---    instruction_rdy <= '0';
---    rd_rdy          <= '0';
-
---    case state_r is
---        when IDLE       => 
---            if read_from_mem = '1' then
---                state_nxt <= BUSY_READ;
---            end if;
---        when BUSY_READ  =>
---            cnt_delay_nxt <= std_logic_vector(unsigned(cnt_delay_r) + to_unsigned(1,3));
---            if (cnt_delay_r = "101")then
---                cnt_delay_nxt   <= (others => '0');
---                instruction_rdy        <= '1';
---                rd_rdy          <= '1';
---                state_nxt       <= IDLE;
---            end if;
---        when others     => 
---            cnt_delay_nxt   <= "000";
---            state_nxt       <= IDLE;
---            instruction_rdy <= '0';
---            rd_rdy          <= '0';
---            wr_en           <= '0';
---        end case;
---end process;
-
 end Behavioral;
