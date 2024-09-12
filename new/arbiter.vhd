@@ -100,7 +100,7 @@ begin
                 
                 
                 for i in 0 to num_of_cores - 1 loop
-                    if key_r(i) = '1' then
+                  --  if key_r(i) = '1' then
                         -- bus
                         if(busrd_i(i) = '1' or busupd_i(i) = '1' or update_i(i) = '1' or flush_i(i) = '1')then
                             busrd_o(i) <= busrd_i(i);
@@ -132,12 +132,12 @@ begin
                         end if;
                         -- addr
                         bus_addr_o <= bus_addr_i((i+1) * addr_w - 1 downto i * addr_w);
-                    else
-                        busrd_o(i)   <= '0';
-                        busupd_o(i)  <= '0';
-                        cache_o(i)   <= '0';
+                --    else
+                  --      busrd_o(i)   <= '0';
+                    --    busupd_o(i)  <= '0';
+                      --  cache_o(i)   <= '0';
                           
-                    end if;
+                    --end if;
                 end loop;
         
             when others => 
