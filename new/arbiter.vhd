@@ -100,44 +100,42 @@ begin
                 
                 
                 for i in 0 to num_of_cores - 1 loop
-                  --  if key_r(i) = '1' then
+                    if key_r(i) = '1' then
                         -- bus
                         if(busrd_i(i) = '1' or busupd_i(i) = '1' or update_i(i) = '1' or flush_i(i) = '1')then
                             busrd_o(i) <= busrd_i(i);
                             busupd_o(i) <= busupd_i(i);
---                        else
---                            busrd_o(i)  <= '0';
---                            busupd_o(i) <= '0';
                         end if;
                         -- cache    
                         if(cache_i(i) = '1')then
                             cache_o(i) <= cache_i(i);
---                        else
---                            cache_o(i) <= '0';
                         end if;
         
                         -- data 
-                        if(flush_i(i) = '1' or update_i(i) = '1')then
-                            data_to_core <= data_from_core((i+1) * word_size - 1 downto i * word_size);
-                        else
-                            data_to_core <= data_from_mem;    
-                        end if;
+--                        if(flush_i(i) = '1' or update_i(i) = '1' or cache_i(i) = '1')then
+--                            data_to_core <= data_from_core((i+1) * word_size - 1 downto i * word_size);
+--                        else
+--                            data_to_core <= data_from_mem;    
+--                        end if;
         
                         if(send_to_mem_i(i) = '1')then
                             data_to_mem <= data_from_core((i+1) * word_size - 1 downto i * word_size);
-                            send_from_mem_o <= '1';
---                        else
---                            data_to_mem <= (others => '0');
---                            send_from_mem_o <= '0';    
+                            send_from_mem_o <= '1';    
                         end if;
                         -- addr
                         bus_addr_o <= bus_addr_i((i+1) * addr_w - 1 downto i * addr_w);
-                --    else
-                  --      busrd_o(i)   <= '0';
-                    --    busupd_o(i)  <= '0';
-                      --  cache_o(i)   <= '0';
+                    elsif key_r(i) = '0' then
+                        if(flush_i(i) = '1' or update_i(i) = '1' or cache_i(i) = '1')then
+                            data_to_core <= data_from_core((i+1) * word_size - 1 downto i * word_size);
+                        else
+                            data_to_core <= data_from_mem;    
+                        end if;                   
+                    else
+                      busrd_o(i)   <= '0';
+                      busupd_o(i)  <= '0';
+                      cache_o(i)   <= '0';
                           
-                    --end if;
+                    end if;
                 end loop;
         
             when others => 

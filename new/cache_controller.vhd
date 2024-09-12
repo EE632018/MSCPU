@@ -332,6 +332,7 @@ begin
                     index1_bus <= index_s_bus & "01";
                     index2_bus <= index_s_bus & "10";
                     index3_bus <= index_s_bus & "11";
+                    lock_arbiter <= '1';
                     
                     if ((tag_bus(tag_bits-1 downto 0) xor 
                         tag_array_r(to_integer(unsigned(index0_bus)))(tag_bits-1 downto 0)) = "000000") then
