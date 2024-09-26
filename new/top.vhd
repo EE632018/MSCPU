@@ -9,7 +9,8 @@ entity top is
         addr_w          : integer := 10;
         word_size       : integer := 32;
         block_size      : integer := 32;
-        size            : integer := 1024
+        size            : integer := 1024;
+        init_pc_val     : integer := 0
     );
     port(
         clk                 : in std_logic;
@@ -300,7 +301,7 @@ begin
             addr_w          => 10,
             word_size       => 32,
             block_size      => 32,
-            init_pc_val     => 2
+            init_pc_val     => i*100
         )
         port map(
             clk             => clk,

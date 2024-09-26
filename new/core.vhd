@@ -146,7 +146,7 @@ begin
 
     inst_cpu: TOP_RISCV
     generic map(
-        init_pc_val     => 2
+        init_pc_val     => init_pc_val
     )
     port map(
       -- Globalna sinhronizacija
