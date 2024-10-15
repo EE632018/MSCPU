@@ -10,7 +10,8 @@ entity top is
         word_size       : integer := 32;
         block_size      : integer := 32;
         size            : integer := 1024;
-        init_pc_val     : integer := 0
+        init_pc_val     : integer := 0; 
+        start_point     : integer := 5
     );
     port(
         clk                 : in std_logic;
@@ -119,6 +120,8 @@ architecture Behavioral of top is
         num_of_cores    : integer := 2
     );
     port(
+        clk                     : in std_logic;
+        reset                   : in std_logic;
         refill                  : in std_logic_vector(num_of_cores - 1 downto 0);
         
         mem_addr                : in std_logic_vector(num_of_cores*addr_w-1 downto 0);
@@ -262,6 +265,8 @@ begin
         num_of_cores    => 2
     )
     port map(
+        clk                     => clk,
+        reset                   => reset,
         refill                  => refill_s, 
         mem_addr                => mem_addr_s,
         instruction_from_bus    => instruction_from_bus_s,
@@ -301,7 +306,7 @@ begin
             addr_w          => 10,
             word_size       => 32,
             block_size      => 32,
-            init_pc_val     => i*100
+            init_pc_val     => i*start_point
         )
         port map(
             clk             => clk,
@@ -323,6 +328,7 @@ begin
             update_o        => update_is(i),
             send_to_mem_o   => send_to_mem_is(i),
             lock_arbiter_o  => lock_arbiter_is(i),
+            
             refill                  => refill_s(i),    
             mem_addr                => mem_addr_s((i+1)* addr_w - 1 downto i*addr_w),
             instruction_from_bus    => instruction_from_bus_s,

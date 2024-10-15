@@ -13,6 +13,7 @@ entity TOP_RISCV is
       -- Interfejs ka memoriji za instrukcije
       instr_mem_address_o : out std_logic_vector(31 downto 0);
       instr_mem_read_i    : in  std_logic_vector(31 downto 0);
+      instr_mem_rd        : out std_logic;
       -- Interfejs ka memoriji za podatke
       data_mem_address_o  : out std_logic_vector(31 downto 0);
       data_mem_read_i     : in  std_logic_vector(31 downto 0);
@@ -47,7 +48,8 @@ architecture structural of TOP_RISCV is
    signal funct3_ex_s        : std_logic_vector(2 downto 0);
    signal rd_mux_s           : std_logic_vector(1 downto 0);
    signal load_mux_s         : std_logic;
-   signal stall_s            : std_logic;      
+   signal stall_s            : std_logic;    
+   signal instr_mem_rd_s     : std_logic;  
             
 begin
    -- Instanca datapath-a
@@ -63,6 +65,7 @@ begin
          instr_mem_address_o => instr_mem_address_o,
          instr_mem_read_i    => instr_mem_read_i,
          instruction_o       => instruction_s,
+         instr_mem_rd        => instr_mem_rd,
          -- interfejs ka memoriji za podatke
          data_mem_address_o  => data_mem_address_o,
          data_mem_write_o    => data_mem_write_o,

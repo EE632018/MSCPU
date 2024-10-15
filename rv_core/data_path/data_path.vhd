@@ -16,6 +16,7 @@ entity data_path is
       instr_mem_address_o : out std_logic_vector (31 downto 0);
       instr_mem_read_i    : in  std_logic_vector(31 downto 0);
       instruction_o       : out std_logic_vector(31 downto 0);
+      instr_mem_rd        : out std_logic;
       -- interfejs ka memoriji za podatke
       data_mem_address_o  : out std_logic_vector(31 downto 0);
       data_mem_write_o    : out std_logic_vector(31 downto 0);
@@ -179,7 +180,7 @@ begin
       if (rising_edge(clk)) then
          if (reset = '0')then
             pc_reg_if_s <= std_logic_vector(to_unsigned(init_pc_val,32));
-         elsif (pc_en_i = '1') then
+         elsif (pc_en_i = '1' and stall_i = '0') then
             pc_reg_if_s <= pc_next_if_s;
          end if;
       end if;
@@ -301,7 +302,14 @@ begin
    -- sabirac za uvecavanje programskog brojaca (sledeca instrukcija)
    pc_adder_if_s <= std_logic_vector(unsigned(pc_reg_if_s) + to_unsigned(4, 32));
 
-   
+   process(stall_i)
+   begin
+        if stall_i = '1' then
+            instr_mem_rd <= '0';
+        else
+            instr_mem_rd <= '1';
+        end if;
+   end process;
 
    -- multiplekseri za prosledjivanje operanada komparatoru za proveravanje uslova za skok
    branch_condition_a_ex_s <= alu_result_mem_s when branch_forward_a_i = '1' else
@@ -521,6 +529,15 @@ begin
             else
                 pc_next_if_s <= pc_adder_if_s;
             end if;
+        end if;
+    end process;
+    
+    process(stall_i, stall_s)
+    begin
+        if stall_i = '0' then
+            stall_o <= stall_s;
+        else
+            stall_o <= '0';
         end if;
     end process;
     

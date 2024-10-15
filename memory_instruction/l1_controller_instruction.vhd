@@ -30,7 +30,7 @@ architecture Behavioral of l1_controller_instruction is
     type tag_array  is array (0 to 2**(index_bits+set_offset_bits) - 1) of std_logic_vector(tag_bits - 1 downto 0);
     type ptr_array is array (0 to 2**index_bits-1) of std_logic;
     -- fsm state of cache_controller
-    type state is (IDLE, COMPARE_TAG, ALLOCATE_REFILL);
+    type state is (IDLE, COMPARE_TAG, HIT_MISS, ALLOCATE_REFILL);
     
     signal state_r, state_nxt                   : state     := IDLE;
     signal tag_array_r, tag_array_nxt           : tag_array := (others => (others => '0'));
@@ -57,7 +57,7 @@ architecture Behavioral of l1_controller_instruction is
     signal index3_r,index3_nxt                  : std_logic_vector(index_bits + set_offset_bits - 1 downto 0); 
 
     signal proc_addr_r, proc_addr_nxt           : std_logic_vector(tag_bits+index_bits+set_offset_bits-1 downto 0);
-
+    signal stall_r, stall_nxt : std_logic;
 begin
 
     -- wr and rd process request
@@ -80,6 +80,7 @@ begin
     begin
         if reset = '0' then
             state_r         <= IDLE;
+            stall_r         <= '0';
             hit_r           <= '0';
             miss_r          <= '0';
             tag_array_r     <= (others => (others => '0'));
@@ -100,6 +101,7 @@ begin
         elsif rising_edge(clk) then
             --if stall_a = '1' then
                 state_r         <= state_nxt;
+                stall_r         <= stall_nxt;
                 hit_r           <= hit_nxt;
                 miss_r          <= miss_nxt;
                 tag_array_r     <= tag_array_nxt;
@@ -127,11 +129,11 @@ begin
             tag_array_nxt, read_from_bus_r, read_from_bus_nxt, tag_r,
             tag_nxt, index0_r, index1_r, index2_r, index3_r, tag, rd,
             hit_nxt, refill_r, update_r, index, mem_addr_r,
-            mem_addr_nxt, hit_r, miss_r, proc_addr_r)
+            mem_addr_nxt, hit_r, miss_r, miss_nxt, proc_addr_r, stall_r)
     begin
         state_nxt         <= state_r;
-        hit_nxt           <= hit_r;
-        miss_nxt          <= miss_r;
+        hit_nxt           <= '0';
+        miss_nxt          <= '0';
         tag_array_nxt     <= tag_array_r;
         instruction_loc_nxt      <= instruction_loc_r;
         s_ptr_nxt         <= s_ptr_r;
@@ -147,7 +149,7 @@ begin
         refill_nxt        <= '0';
         mem_addr_nxt      <= mem_addr_r;
         proc_addr_nxt     <= proc_addr_r;  
-        stall             <= '0';  
+        stall_nxt         <= '0';  
 
 -- Case state explanation
 -- 1. IDLE 
@@ -158,7 +160,7 @@ begin
 
         case state_r is
             when IDLE               =>
-                stall       <= '0';
+                stall_nxt       <= '0';
                 hit_nxt     <= '0';
                 miss_nxt    <= '0';
 
@@ -168,7 +170,7 @@ begin
                 index2_nxt  <= index & "10";
                 index3_nxt  <= index & "11";
                 if rd = '1' then
-                    stall <= '1';
+                    stall_nxt <= '1';
                     state_nxt <= COMPARE_TAG;
                     proc_addr_nxt   <= proc_addr;
                 end if;
@@ -201,8 +203,12 @@ begin
                         instruction_loc_nxt <= index & (not(s_ptr_r(to_integer(unsigned(index))))) & (not l_ptr_r(to_integer(unsigned(index))));
                     end if;
                 end if;
-
-                if hit_nxt = '1' then
+                
+                stall_nxt <= '1';
+                state_nxt <= HIT_MISS;
+                mem_addr_nxt <= proc_addr_r;
+        when HIT_MISS => 
+                if hit_r = '1' then
                     if instruction_loc_nxt(1) = '1' then
                         s_ptr_nxt(to_integer(unsigned(index))) <= '1';
                         r_ptr_nxt(to_integer(unsigned(index))) <= instruction_loc_nxt(0);
@@ -210,20 +216,28 @@ begin
                         s_ptr_nxt(to_integer(unsigned(index))) <= '0';
                         l_ptr_nxt(to_integer(unsigned(index))) <= instruction_loc_nxt(0);
                     end if;
-
-                    stall <= '0';
+                    stall_nxt <= '0';
                     state_nxt <= IDLE;
-                else
+                elsif hit_r = '0' and miss_r = '1' then
                     read_from_bus_nxt   <= '1';
-                    mem_addr_nxt        <= proc_addr_r;
-                    stall               <= '1';  
+                    mem_addr_nxt        <= mem_addr_r;
+                    refill_nxt          <= '1';
+                    stall_nxt           <= '1';  
                     state_nxt           <= ALLOCATE_REFILL;
+                else
+                    read_from_bus_nxt   <= '0';
+                    mem_addr_nxt        <= mem_addr_r;
+                    refill_nxt          <= '0';
+                    stall_nxt           <= '1';  
+                    state_nxt           <= COMPARE_TAG;    
                 end if;
-            when ALLOCATE_REFILL    =>                
-                refill_nxt  <= '1';
+            when ALLOCATE_REFILL    => 
+                read_from_bus_nxt   <= '0';
+                mem_addr_nxt        <= mem_addr_r;
+                refill_nxt          <= '0';               
                 tag_array_nxt(to_integer(unsigned(instruction_loc_r))) <= tag;
-                stall     <= '0';
-                state_nxt <= IDLE;
+                stall_nxt     <= '0';
+                state_nxt     <= IDLE;
             when others             => 
         end case;
     end process;
@@ -232,4 +246,5 @@ begin
     refill                  <= refill_r;
     read_from_bus           <= read_from_bus_r;
     mem_addr                <= mem_addr_r;
+    stall                   <= stall_r;
 end Behavioral;

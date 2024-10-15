@@ -29,7 +29,7 @@ architecture Behavioral of arbiter_instruction is
 
     signal instruction_addr_s, instruction_addr_r : std_logic_vector(addr_w-1 downto 0);
     signal instruction_rd_s, instruction_rd_r   : std_logic;
-    signal instruction_from_bus, instruction_from_bus_r : std_logic_vector(block_size-1 downto 0);  
+    signal instruction_from_bus_s, instruction_from_bus_r : std_logic_vector(block_size-1 downto 0);  
 
 
 begin
@@ -70,6 +70,6 @@ begin
     end process;
 
     instruction_addr <= instruction_addr_r;
-    instruction_rd   <= instruction_rd_r; 
+    instruction_rd   <= instruction_rd_s; 
     instruction_from_bus <= instruction_from_bus_r;
 end Behavioral;

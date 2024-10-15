@@ -54,6 +54,7 @@ architecture Behavioral of core is
       -- Interfejs ka memoriji za instrukcije
       instr_mem_address_o : out std_logic_vector(31 downto 0);
       instr_mem_read_i    : in  std_logic_vector(31 downto 0);
+      instr_mem_rd        : out std_logic;
       -- Interfejs ka memoriji za podatke
       data_mem_address_o  : out std_logic_vector(31 downto 0);
       data_mem_read_i     : in  std_logic_vector(31 downto 0);
@@ -140,7 +141,7 @@ architecture Behavioral of core is
     signal instr_mem_address_s, instr_mem_read_s : std_logic_vector(31 downto 0);
     signal data_mem_address_s, data_mem_read_s, data_mem_write_s : std_logic_vector(31 downto 0);
     signal data_mem_we, data_mem_rd : std_logic_vector(3 downto 0);
-    signal stall_s, stall_a, stall_i, stall_d : std_logic;
+    signal stall_s, stall_a, stall_i, stall_d, instr_mem_rd_s : std_logic;
 
 begin
 
@@ -155,6 +156,7 @@ begin
       -- Interfejs ka memoriji za instrukcije
       instr_mem_address_o => instr_mem_address_s,
       instr_mem_read_i    => instr_mem_read_s,
+      instr_mem_rd        => instr_mem_rd_s,
       -- Interfejs ka memoriji za podatke
       data_mem_address_o  => data_mem_address_s,
       data_mem_read_i     => data_mem_read_s,
@@ -185,7 +187,7 @@ begin
     port map(
         clk                     => clk,
         reset                   => reset,
-        rd                      => data_mem_rd(0),
+        rd                      => instr_mem_rd_s,
         addr                    => instr_mem_address_s(9 downto 0), 
         refill                  => refill,
         read_from_bus           => read_from_bus,
@@ -236,4 +238,5 @@ begin
     );
 
     stall_s <= stall_i or stall_d;
+    
 end Behavioral;
